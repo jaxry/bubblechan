@@ -1,1 +1,1 @@
-All content licensed under the [GNU General Public License Version 3](http://www.gnu.org/licenses/gpl.html).
+All content licensed under the [GNU Affero Public License Version 3](http://www.gnu.org/licenses/agpl-3.0.en.html).

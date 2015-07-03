@@ -8,7 +8,7 @@ Bubblechan explores the possibility of browsing an imageboard in full 2D. To do 
 
 Bubblechan is a web app. The force-directed graph is computed on a server before it is served to a web browser. Currently, Bubblechan supports only the reading of threads from 4chan.
 
-**Disclaimer:** Bubblechan is still in at an extremely early stage of development and is not more than a proof-of-concept at this point. With your interest, the app will continue to grow and may eventually prove to be a viable alternative to traditional imageboard browsing.
+**Disclaimer:** Bubblechan is still at an extremely early stage of development and is nothing more than a proof-of-concept at this point. With your interest, the app will continue to grow and may eventually prove to be a viable alternative to traditional imageboard browsing.
 
 ---
 

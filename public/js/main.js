@@ -7,22 +7,25 @@ myApp.constants = {
     standalone: '#e94',
     reply: '#34a',
 
-    graphScale: 150,
+    graphScale: 145,
 
     maxNodeSize: 230,
     imageNodeSize: 200,
-    minNodeSize: 100,
+    minNodeSize: 70,
+    minExpandSize: 230,
 
     edgeWidth: 10,
     arrowMargin: 20,
     baseMargin: 0,
     arrowWidth: document.getElementById('Arrow').getAttribute('markerWidth'),
 
-    edgeScaleLimit: 6,
+    edgeScaleLimit: 9,
     nodeScaleLimit: 1,
 
     nodeExpandDuration: 0.2
 };
+
+myApp.constants.time = Date.now();
 myApp.constants.edgeSVGPadding = myApp.constants.edgeScaleLimit * myApp.constants.edgeWidth;
 
 myApp.setAttributes = function(elem, attrs) {
@@ -45,6 +48,21 @@ myApp.createSVGElem = function(type, attrs) {
 
 myApp.clamp = function(x, min, max) {
     return Math.max(Math.min(x, max), min);
+};
+
+myApp.timeElapsed = function(t) {
+    var minutes = (myApp.constants.time / 1000 - t) / 60
+      , elapsed, verbose;
+
+    if (minutes < 60) {
+        elapsed = Math.round(minutes);
+        verbose = elapsed === 1 ? ' minute ago' : ' minutes ago';
+    }
+    else {
+        elapsed = Math.round(minutes / 60);
+        verbose = elapsed === 1 ? ' hour ago' : ' hours ago';
+    }
+    return  elapsed + verbose;
 };
 
 myApp.animate = (function(from, to, duration, callback) {
@@ -78,33 +96,22 @@ myApp.animate = (function(from, to, duration, callback) {
 })();
 
 
-myApp.Node = function(post, graphWidth, graphHeight) {
+myApp.Node = function(post) {
     this.id = post.id;
     this.type = post.type;
     this.pos = [post.pos[0] * myApp.constants.graphScale, post.pos[1] * myApp.constants.graphScale];
     this.scale = 1.0;
     this.parents = [];
     this.children = [];
-    this.radius = null;
-    this.container = null;
-    this.size = {
-        full: null,
-        reduced: null,
-        current: null,
-        expandable: true
-    };
-    this.img = null;
+    this.size = {};
 
-    this.createNodeDiv(post, graphWidth, graphHeight);
+    this.createNodeDiv(post);
     this.setRadius = this.setRadius.bind(this);
 };
 
 myApp.Node.prototype = {
     updateTransform: function() {
-        // this.container.style.left =  this.pos[0] + 'px';
-        // this.container.style.top =  this.pos[1] + 'px';
-        // this.container.style.transform = 'scale(' + this.scale + ',' + this.scale + ')';
-        this.container.style.transform = 'matrix(' + this.scale  + ',0,0,' + this.scale  + ',' + this.pos[0] + ',' + this.pos[1] + ')';
+        this.container.style.transform = 'translate(-50%, -50%) matrix(' + this.scale  + ',0,0,' + this.scale  + ',' + this.pos[0] + ',' + this.pos[1] + ')';
     },
     updateEdges: function() {
         for (var i = 0; i < this.parents.length; i++) {
@@ -116,27 +123,26 @@ myApp.Node.prototype = {
     },
     cacheRadius: function() {
         this.radius = this.container.offsetWidth / 2;
-        this.container.style['margin-left'] = -this.radius + 'px';
-        this.container.style['margin-top'] = -this.radius + 'px';
     },
     setRadius: function(value) {
         this.size.current = value;
-        value += 'px';
-        this.container.style.width = value;
-        this.container.style.height = value;
+
+        this.content.style.width = this.content.style.height = value / 1.41 + 'px';
+        this.container.style.width = this.container.style.height = value + 'px';
         this.cacheRadius();
         this.updateEdges();
 
     },
-    setFullRadius: function(maxRadius) {
-        if (this.size.expandable && !this.size.isFull) {
-            myApp.animate(this.size.current, Math.min(this.size.full, maxRadius), myApp.constants.nodeExpandDuration, this.setRadius);
+    expand: function(maxRadius) {
+        if (!this.size.isFull) {
+            var expandTo = this.img ? myApp.clamp(this.img.max, this.size.full, maxRadius) : this.size.full;
+            myApp.animate(this.size.current, expandTo, myApp.constants.nodeExpandDuration, this.setRadius);
             this.container.classList.add('expanded');
         }
 
         this.size.isFull = true;
     },
-    setReducedRadius: function() {
+    reduce: function() {
         myApp.animate(this.size.current, this.size.reduced, myApp.constants.nodeExpandDuration, this.setRadius);
         this.container.classList.remove('expanded');
         this.size.isFull = false;
@@ -147,7 +153,7 @@ myApp.Node.prototype = {
             this.updateTransform();
         }
     },
-    setImage: function(thumb) {
+    setThumbnail: function(thumb) {
         if (this.img && thumb === this.img.isFull) {
             this.container.style['background-image'] = 'url(' + (thumb ? this.img.thumb : this.img.full) + ')';
             this.img.isFull = !thumb;
@@ -156,56 +162,89 @@ myApp.Node.prototype = {
     createNodeDiv: function(post) {
         this.container = myApp.createElem('div', {class: 'node', 'data-id': this.id});
         
+        // append to body so offsetHeight is computable
         document.body.appendChild(this.container);
 
         this.container.classList.add(post.type);
 
         if (post.img) {
-            this.img = {
-                full: post.img,
-                thumb: post.thumb,
-                isFull: false
+            this.img = { 
+                full: post.img, 
+                thumb: post.thumb, 
+                isFull: false,
+                max: Math.max(post.width, post.height)
             };
-            this.setImage(false);
-            this.container.classList.add('hasImage');
+            this.setThumbnail(false);
+            this.container.classList.add('image');
         }
 
-        var message = myApp.createElem('div', {class: 'message'});
+        this.content = this.container.appendChild(myApp.createElem('div', {class: 'node-content'}));
+
+        this.content.appendChild(this._createHeader(post));
+
+        var reducedWidth = 0;
+
         if (post.com) {
-            this.container.appendChild(message);
+            var message = this.content.appendChild(myApp.createElem('div', {class: 'message'}));
             message.innerHTML = post.com;
 
-            // resize the message to a square. Multiple iterations are required for maximum precision.
-            for (var i = 0; i < 3; i++) {
-                message.style.width = Math.sqrt(message.offsetWidth * message.offsetHeight) + 'px';
-            }
+            reducedWidth = this._calcWidth();
+            message.style['min-width'] = reducedWidth + 'px';
         }
 
-        // expand the message to aid in readability
-        message.style.width = message.offsetWidth * 1.2 + 'px';
+        this.content.appendChild(this._createFooter(post));
 
-        // diameter of circle containing the message. 
-        var diameter = message.offsetWidth * 1.4;
-        this.size.reduced = myApp.clamp(diameter, post.img ? myApp.constants.imageNodeSize : myApp.constants.minNodeSize, myApp.constants.maxNodeSize);
-        
-        var min = Math.max(diameter, this.size.reduced);
-        this.size.full = post.img ? Math.max(min, Math.max(post.width, post.height)) : min;
-        this.size.expandable = (this.size.full === this.size.reduced) ? false : true;
+        this.container.classList.add('expanded');
+        var expandedWidth = this._calcWidth();
+        this.container.classList.remove('expanded');
+
+        this.size.reduced = myApp.clamp(reducedWidth * 1.41, post.img ? myApp.constants.imageNodeSize : myApp.constants.minNodeSize, myApp.constants.maxNodeSize);
+        this.size.full = Math.max(Math.max(expandedWidth * 1.45, myApp.constants.minExpandSize), this.size.reduced);
         this.size.current = this.size.reduced;
 
         this.setRadius(this.size.current);
         this.cacheRadius();
         this.updateTransform();
+    },
+    _calcWidth: function() {
+        // resize the content to a square. Multiple iterations are required for maximum precision.
+        for (var i = 0; i < 4; i++) {
+            this.content.style.width = Math.sqrt(this.content.offsetWidth * this.content.offsetHeight) + 'px';
+        }
+        return this.content.offsetWidth;
+    },
+    _createHeader: function(post) {
+        var header = myApp.createElem('div', {class: 'header detail'});
+        
+        header.innerHTML = (post.trip ? "<span class='name-block'>" + post.name + post.trip + " </span>" : "") +
+                           "No.<a target='_blank' class='post-num' href='" + post.postUrl + "'>" + post.no + " </a><br>" + 
+                           "<span class='dateTime'>" + myApp.timeElapsed(post.time) + " </span>";
+
+        return header;
+    },
+    _createFooter: function(post) {
+        var footer = myApp.createElem('div', {class: 'footer detail'});
+
+        if (post.img) {
+            var il = myApp.createElem('a', {class: 'node-link image-link', target: '_blank', href: post.img});
+            il.innerHTML = post.filename + post.ext;
+            footer.appendChild(il);
+
+            il.addEventListener('mouseover', function() {
+                this.container.classList.add('hide-content');
+            }.bind(this));
+            il.addEventListener('mouseout', function() {
+                this.container.classList.remove('hide-content');
+            }.bind(this));
+        }
+
+        return footer;
     }
 };
 
 myApp.Edge = function(parent, child) {
     this.parent = parent;
     this.child = child;
-    this.container = null;
-    this.line = null;
-    this.gradient = null;
-    this.strokeWidth = null;
     this.dim = {
         left: Math.min(this.parent.pos[0], this.child.pos[0]) - myApp.constants.edgeSVGPadding / 2,
         top: Math.min(this.parent.pos[1], this.child.pos[1]) - myApp.constants.edgeSVGPadding / 2,
@@ -337,7 +376,7 @@ myApp.Graph = function() {
 
             for (var i = 0; i < nodes.length; i++) {
                 nodes[i].setScale(nodeScale);
-                nodes[i].setImage(thumbnail);
+                nodes[i].setThumbnail(thumbnail);
             }
             for (var i = 0; i < edges.length; i++) {
                 edges[i].setScale(edgeScale);
@@ -484,7 +523,7 @@ myApp.Navigation = function(graph) {
         if (nodeID !== lastHoveredNode) {
             var node = graph.nodes[nodeID];
             node.container.style['z-index'] = 1;
-            node.setFullRadius(0.9 * Math.min(graph.width, graph.height));
+            node.expand(0.9 * Math.min(graph.width, graph.height));
 
             lastHoveredNode = nodeID;
         }
@@ -493,7 +532,7 @@ myApp.Navigation = function(graph) {
     function nodeLeave(e) {
         var node = graph.nodes[this.dataset.id];
         node.container.style['z-index'] = 0;
-        node.setReducedRadius();
+        node.reduce();
         lastHoveredNode = null;
     }
 

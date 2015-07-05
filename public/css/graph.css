@@ -23,61 +23,38 @@ html, body {
     position: absolute;
 }
 
-#graph > * {
+.graph-group {
+    position: absolute;
+}
+
+.graph-group > * {
     position: absolute;
 }
 
 .node {
     position: absolute;
-
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-
     color: #fff;
     background-color: #111;
     border-radius: 50%;
     overflow: hidden;
-
-    pointer-events: auto;
+    transition: border-radius 0.1s;
 }
 
-.node.expanded {
-}
-
-.node.hasImage {
+.node.image {
     background-color: #111;
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center;
     background-origin: border-box;
     text-shadow:
-        0px 0px 3px #000,  
-        0px 0px 3px #000,
-        0px 0px 3px #000,
-        0px 0px 3px #000,
-        0px 0px 3px #000;
+        0px 0px 4px #000,  
+        0px 0px 4px #000,
+        0px 0px 4px #000,
+        0px 0px 4px #000;
 }
 
-.node.hasImage.expanded {
+.node.image.expanded {
     background-size: contain;
-}
-
-.node .message {
-    text-align: center;
-    line-height: 125%;
-    /*font-family: arial,helvetica,sans-serif;*/
-    font-family: Times, "Times New Roman", Georgia, serif;
-    font-size: 17px;
-}
-
-.node.expanded .message {
-    text-align: left;
-}
-
-.message a {
-    pointer-events: none;
 }
 
 .node.standalone {
@@ -92,6 +69,43 @@ html, body {
     border: 30px solid #fff;
 }
 
+.node-content {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.expanded .node-content {
+    justify-content: space-between;
+}
+
+.node .message {
+    text-align: center;
+    line-height: 125%;
+    font-family: Times, "Times New Roman", Georgia, serif;
+    font-size: 17px;
+}
+
+.expanded .message {
+    text-align: left;
+}
+
+.expanded.image .message {
+    padding: 1em;
+    border-radius: 0.5em;
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.message a {
+    pointer-events: none;
+}
+
 .node .quotelink {
     color: #ffa;
 }
@@ -100,14 +114,9 @@ html, body {
     color: #789922;
 }
 
-.node.hasImage .quote {
+.image .quote {
     color: #bb4;
 }
-
-.edge {
-    position: absolute;
-}
-
 
 s {
     color: #2a2a2a;
@@ -129,4 +138,45 @@ s:hover {
     overflow-x: auto;
     max-width: 600px;
     font-size: 14px;
+}
+
+.node .header {
+    margin-bottom: 10px;
+}
+
+.node .detail {
+    display: none;
+    text-align: center;
+    font-family: arial,helvetica,sans-serif;
+    font-size: 14px;
+    color: #fff;
+}
+
+.expanded .detail {
+    display: inline;
+}
+
+.detail a {
+    color: #fff;
+}
+
+.hide-content {
+    border-radius: 0;
+}
+
+.hide-content .node-content {
+    opacity: 0;
+}
+
+.image-link {
+    padding: 10px;
+}
+
+.name-block {
+    color: #4a6;
+}
+
+.post-num {
+    text-decoration: none;
+    font-weight: bold;
 }

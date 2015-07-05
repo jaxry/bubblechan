@@ -13,20 +13,23 @@ function copyProperties(props, from, to) {
 function makeThreadObject(jsonThread, board) {
     var thread = {}
       , jsonPosts = jsonThread.posts
+      , op = jsonPosts[0]
       , postTable = {}
       , lastUnrepliedPost;
 
-    thread.title = jsonPosts[0].semantic_url;
-    thread.replyCount = jsonPosts[0].replies;
+    thread.title = op.semantic_url;
+    thread.replyCount = op.replies;
     thread.posts = new Array(jsonPosts.length);
 
     for (var i = 0; i < jsonPosts.length; i++) {
         var post = {}
           , jp = jsonPosts[i];
 
-        copyProperties(['name', 'trip', 'id', 'capcode', 'com', 'filename', 'ext', 'spoiler'], jp, post);
-        post.postNum = jp.no;
+        copyProperties(['no', 'name', 'trip', 'com', 'filename', 'ext', 'time'], jp, post);
+        
         post.id = i;
+        post.postUrl = 'http://boards.4chan.org/' + board + '/thread/' + op.no +  '#p' + jp.no;
+
         if (jp.filename) {
             post.img = 'http://i.4cdn.org/'+ board + '/'+ jp.tim + jp.ext;
             post.thumb = 'http://i.4cdn.org/' + board + '/' + jp.tim + 's.jpg';
@@ -34,7 +37,7 @@ function makeThreadObject(jsonThread, board) {
             post.height = jp.h;
         }
 
-        postTable[post.postNum] = i;
+        postTable[post.no] = i;
 
         var parents = [];
         while(match = reQuotes.exec(post.com)) {

@@ -7,4 +7,4 @@ try {
     if ( e.code !== 'EEXIST' ) throw e;
 }
 
-childProcess.execSync('gcc force_direct.c -o ./bin/force_direct -lm -O3 -std=gnu99');
+childProcess.exec('gcc force_direct.c -o ./bin/force_direct -lm -O3 -std=gnu99');

@@ -12,7 +12,6 @@ myApp.constants = {
     maxNodeSize: 230,
     imageNodeSize: 200,
     minNodeSize: 70,
-    minExpandSize: 230,
 
     edgeWidth: 10,
     arrowMargin: 20,
@@ -154,7 +153,7 @@ myApp.Node.prototype = {
         }
     },
     setThumbnail: function(thumb) {
-        if (this.img && thumb === this.img.isFull) {
+        if (thumb === this.img.isFull) {
             this.container.style['background-image'] = 'url(' + (thumb ? this.img.thumb : this.img.full) + ')';
             this.img.isFull = !thumb;
         }
@@ -186,7 +185,7 @@ myApp.Node.prototype = {
 
         if (post.com) {
             var message = this.content.appendChild(myApp.createElem('div', {class: 'message'}));
-            message.innerHTML = post.com;
+            message.innerHTML = '<div>' + post.com + '</div>'; 
 
             reducedWidth = this._calcWidth();
             message.style['min-width'] = reducedWidth + 'px';
@@ -199,7 +198,7 @@ myApp.Node.prototype = {
         this.container.classList.remove('expanded');
 
         this.size.reduced = myApp.clamp(reducedWidth * 1.41, post.img ? myApp.constants.imageNodeSize : myApp.constants.minNodeSize, myApp.constants.maxNodeSize);
-        this.size.full = Math.max(Math.max(expandedWidth * 1.45, myApp.constants.minExpandSize), this.size.reduced);
+        this.size.full = expandedWidth * 1.5;
         this.size.current = this.size.reduced;
 
         this.setRadius(this.size.current);
@@ -208,7 +207,7 @@ myApp.Node.prototype = {
     },
     _calcWidth: function() {
         // resize the content to a square. Multiple iterations are required for maximum precision.
-        for (var i = 0; i < 4; i++) {
+        for (var i = 0; i < 3; i++) {
             this.content.style.width = Math.sqrt(this.content.offsetWidth * this.content.offsetHeight) + 'px';
         }
         return this.content.offsetWidth;
@@ -226,7 +225,7 @@ myApp.Node.prototype = {
         var footer = myApp.createElem('div', {class: 'footer detail'});
 
         if (post.img) {
-            var il = myApp.createElem('a', {class: 'node-link image-link', target: '_blank', href: post.img});
+            var il = myApp.createElem('a', {class: 'image-link', target: '_blank', href: post.img});
             il.innerHTML = post.filename + post.ext;
             footer.appendChild(il);
 
@@ -338,11 +337,13 @@ myApp.Graph = function() {
 
 
     var nodes = [],
-        edges = [];
+        edges = [],
+        nodesWithImages = [];
 
     function addNode(post) {
         var node = new myApp.Node(post, graphWidth, graphHeight);
         nodes.push(node);
+        if (node.img) nodesWithImages.push(node);
         nodeDiv.appendChild(node.container);
 
         for (var i = 0; i < post.parents.length; i++) {
@@ -376,10 +377,12 @@ myApp.Graph = function() {
 
             for (var i = 0; i < nodes.length; i++) {
                 nodes[i].setScale(nodeScale);
-                nodes[i].setThumbnail(thumbnail);
             }
             for (var i = 0; i < edges.length; i++) {
                 edges[i].setScale(edgeScale);
+            }
+            for (var i = 0; i < nodesWithImages.length; i++) {
+                nodesWithImages[i].setThumbnail(thumbnail);
             }
         },
         addPosts: function(posts) {

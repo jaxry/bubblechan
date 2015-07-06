@@ -95,14 +95,14 @@ function runForceDirect(posts, callback) {
 }
 
 function get4ChanJSON(board, threadnum, callback) {
-    http.get('http://a.4cdn.org/' + board + '/thread/' + threadnum + '.json', function(res){
+    http.get('http://a.4cdn.org/' + board + '/thread/' + threadnum + '.json', function(res) {
         var data = '';
         res.setEncoding('utf8');
         res.on('data', function(chunk) {
             data += chunk;
         });
         res.on('end', function(){
-            callback(JSON.parse(data));
+            callback(data ? JSON.parse(data) : false);
         });
     });
 
@@ -116,12 +116,17 @@ function processThread(res, board, threadnum) {
     var thread;
 
     function handleJson(jsonThread) {
-        thread = makeThreadObject(jsonThread, board);
-        setImmediate(runForceDirect, thread.posts, serveHTML);
+        if (jsonThread) {
+            thread = makeThreadObject(jsonThread, board);
+            setImmediate(runForceDirect, thread.posts, serveHTML);
+        }
+        else {
+            res.status(404).send('Cannot find thread');
+        }
     }
 
     function serveHTML() {
-        console.log(Date.now() - time + ' ms');
+        console.log(thread.title + ': ' + (Date.now() - time) + ' ms');
         res.render('index.jade', {thread: thread});
     }
 

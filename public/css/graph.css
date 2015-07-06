@@ -83,13 +83,19 @@ html, body {
 
 .expanded .node-content {
     justify-content: space-between;
+    word-wrap: break-word;
 }
 
 .node .message {
     text-align: center;
     line-height: 125%;
     font-family: Times, "Times New Roman", Georgia, serif;
-    font-size: 17px;
+    font-size: 1.05em;
+    width: 100%;
+}
+
+.expanded .message div {
+    margin-bottom: 1.3em;
 }
 
 .expanded .message {
@@ -148,7 +154,7 @@ s:hover {
     display: none;
     text-align: center;
     font-family: arial,helvetica,sans-serif;
-    font-size: 14px;
+    font-size: 0.88em;
     color: #fff;
 }
 

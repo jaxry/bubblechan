@@ -18,7 +18,7 @@ myApp.constants = {
     arrowMargin: 18,
     baseMargin: 0,
     arrowWidth: document.getElementById('Arrow').getAttribute('markerWidth'),
-    baseWidth: 0.4,
+    baseWidth: document.getElementById('Circle-reply').getAttribute('markerWidth') / 2.5 - 0.1,
 
     edgeScaleLimit: 10,
     nodeScaleLimit: 1,

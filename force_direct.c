@@ -6,7 +6,7 @@
 #include <math.h>
 
 #define ITERATIONS 5000
-#define START_TEMP 3
+#define START_TEMP 1
 #define STOP_TEMP 0.1
 
 struct args {

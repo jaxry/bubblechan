@@ -102,7 +102,7 @@ function get4ChanJSON(board, threadnum, callback) {
             data += chunk;
         });
         res.on('end', function(){
-            callback(data ? JSON.parse(data) : false);
+            callback(data ? JSON.parse(data) : null);
         });
     });
 
@@ -126,7 +126,7 @@ function processThread(res, board, threadnum) {
     }
 
     function serveHTML() {
-        console.log(thread.title + ': ' + (Date.now() - time) + ' ms');
+        console.log(thread.title + ' - ' + (Date.now() - time) + ' ms');
         res.render('index.jade', {thread: thread});
     }
 

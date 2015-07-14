@@ -5,15 +5,26 @@ html
     meta(name='viewport', content='user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi')
     link(rel='stylesheet', href='/css/graph.css')
     script.
-      var myApp = {}; myApp.posts = !{JSON.stringify(thread.posts)}
+      var myApp = {}; myApp.thread = !{JSON.stringify(thread)};
 
   body
     div#graph-container
 
   svg#svg-defs(width='0', height='0')
     defs
-      marker#Arrow(viewBox='0 0 10 10', orient='auto', refX='0', refY='5', markerWidth='2', markerHeight='2')
+      marker#Arrow(viewBox='0 0 10 10', orient='auto', refX='1', refY='5', markerWidth='2', markerHeight='2')
         path(d='M 0 0 L 10 5 L 0 10 z', fill='#fff')
+      marker#Circle-op(viewBox='0 0 10 10', orient='auto', refX='4', refY='5', markerWidth='2', markerHeight='2')
+        circle(cx='0', cy='5', r='5', fill='#fff')
+      marker#Circle-standalone(viewBox='0 0 10 10', orient='auto', refX='4', refY='5', markerWidth='2', markerHeight='2')
+        circle(cx='0', cy='5', r='5', fill='#e94')
+      marker#Circle-reply(viewBox='0 0 10 10', orient='auto', refX='4', refY='5', markerWidth='2', markerHeight='2')
+        circle(cx='0', cy='5', r='5', fill='#34a')
+      marker#Circle-highlight(viewBox='0 0 10 10', orient='auto', refX='4', refY='5', markerWidth='2', markerHeight='2')
+        circle(cx='0', cy='5', r='5', fill='#ffa')
+
+      //- these markers are hard-coded. It may be a good idea to generate them dynamically instead.
+
 
 
   script(src='/js/main.js')

@@ -114,6 +114,7 @@ html, body {
 }
 
 .expanded .node-message {
+    text-align: left;
     margin-bottom: 1.3em;
 }
 
@@ -191,8 +192,9 @@ s:hover {
     text-align: left;
     padding: 5px;
     display: inline-block;
-    max-height: 400px;
-    max-width: 600px;
+    max-height: 100%;
+    max-width: 100%;
     font-size: 14px;
+    word-wrap: normal;
     overflow: auto;
 }

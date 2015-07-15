@@ -642,8 +642,7 @@ myApp.Controls = function(graph) {
 };
 
 function replyPreview(graph, posts) {
-    var postTable = {}
-      , rePostNo = /\d+/;
+    var rePostNo = /\d+/;
 
     function quoteHover(e) {
         graph.nodes[this.dataset.id].parents[this.dataset.order].highlightOn();
@@ -657,7 +656,6 @@ function replyPreview(graph, posts) {
         for (var i = 0; i < nodes.length; i++) {
             
             var node = graph.nodes[i];
-            postTable[node.no] = posts[i];
 
             if (node.type !== 'reply') continue;
             

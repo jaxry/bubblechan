@@ -93,6 +93,10 @@ html, body {
     align-items: center;
 
     word-wrap: break-word;
+
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
 }
 
 .expanded .node-content {
@@ -119,7 +123,7 @@ html, body {
 }
 
 .expanded.node-image .node-message {
-    background: rgba(0, 0, 0, 0.4);
+    background: rgba(0, 0, 0, 0.5);
     border-radius: 0.5em;
     padding: 1em;
 }

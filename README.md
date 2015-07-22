@@ -32,13 +32,15 @@ Visit http://localhost:3000/`board`/thread/`threadnumber` to browse a specific 4
 + **Orange Nodes**: standalone posts which are _not_ replies.
 
 #### Controls
-Navigate the graph with the mouse. 
+Navigate the graph with the mouse.
 
-+ Pressing or holding a mouse button pans the graph. 
-+ Using the mouse wheel scales the graph. 
-+ Hovering over a node expands the node, making the full post visible.
++ **Mouse button**: Click to jump, hold to pan.
++ **Mouse wheel**: Zoom the graph. 
++ **Space**: Reset zoom to default. Pressing space again zooms the graph out fully.
 
-Bubblechan also supports the use of touchscreens. 
+Hovering over a node expands the node, making the full post visible.
+
+Bubblechan also works with a touchscreen.
 
 ## Contributing
 If you like the idea of Bubblechan and would like to see the app grow, any bit of your effort is appreciated and welcomed. In the case that you have feedback, criticism, or ideas for the app, please considering visiting the **Issues** tab and sharing your thoughts. Bubblechan is in active development and your feedback will be put to good use.

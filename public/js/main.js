@@ -8,14 +8,14 @@ myApp.constants = {
     reply: '#34a',
     highlight: '#ffa',
 
-    graphScale: 145,
+    graphScale: 140,
 
     maxNodeSize: 230,
     imageNodeSize: 200,
-    minNodeSize: 70,
+    minNodeSize: 90,
 
     edgeWidth: 12,
-    arrowMargin: 18,
+    arrowMargin: 15,
     baseMargin: 0,
     arrowWidth: document.getElementById('Arrow').getAttribute('markerWidth'),
     baseWidth: document.getElementById('Circle-reply').getAttribute('markerWidth') / 2.5 - 0.1,
@@ -27,7 +27,18 @@ myApp.constants = {
 };
 
 myApp.constants.time = Date.now();
-myApp.constants.edgeSVGPadding = myApp.constants.edgeScaleLimit * myApp.constants.edgeWidth * 1.5;
+myApp.constants.edgeSVGPadding = myApp.constants.edgeScaleLimit * myApp.constants.edgeWidth;
+
+myApp.onWindowResize = function(callback) {
+
+    var id;
+    function callbackWithDelay() {
+        clearTimeout(id);
+        id = setTimeout(callback, 100);
+    }
+
+    window.addEventListener('resize', callbackWithDelay);
+}
 
 myApp.setAttributes = function(elem, attrs) {
     for (var a in attrs) {
@@ -96,7 +107,6 @@ myApp.animate = (function() {
     };
 })();
 
-
 myApp.Node = function(post) {
     this.id = post.id;
     this.no = post.no;
@@ -158,16 +168,12 @@ myApp.Node.prototype = {
         this.size.isExpanded = false;
     },
     setScale: function(s) {
-        if (this.scale !== s) {
-            this.scale = s;
-            this.updateTransform();
-        }
+        this.scale = s;
+        this.updateTransform();
     },
     setThumbnail: function(thumb) {
-        if (thumb === this.img.isFull) {
-            this.container.style['background-image'] = 'url(' + (thumb ? this.img.thumb : this.img.full) + ')';
-            this.img.isFull = !thumb;
-        }
+        this.container.style['background-image'] = 'url(' + (thumb ? this.img.thumb : this.img.full) + ')';
+        this.img.isFull = !thumb;
     },
     highlightOn: function() {
         this.container.classList.add('node-highlight');
@@ -257,7 +263,7 @@ myApp.Edge = function(parent, child) {
     this.c = {
         dirX: this.parent.pos[0] - this.child.pos[0],
         dirY: this.parent.pos[1] - this.child.pos[1]
-    }
+    };
     this.c.dist = Math.sqrt(this.c.dirX*this.c.dirX + this.c.dirY*this.c.dirY);
     this.c.dirX  /= this.c.dist;
     this.c.dirY /= this.c.dist;
@@ -304,10 +310,8 @@ myApp.Edge.prototype = {
         this._renderEdge(0);
     }, 
     setScale: function(s) {
-        if (this.idealStrokeWidth !== s) {
-            this.idealStrokeWidth = s;
-            this.update();
-        }
+        this.idealStrokeWidth = s;
+        this.update();
     },
     highlightOn: function() {
         this.line.setAttribute('stroke', myApp.constants.highlight);
@@ -357,72 +361,106 @@ myApp.Edge.prototype = {
     }
 };
 
-
 myApp.Graph = function() {
 
     var container = document.getElementById('graph-container')
       , graphDiv = container.appendChild(myApp.createElem('div', {id: 'graph'}))
       , edgeDiv = myApp.createElem('div', {class: 'graph-group'})
       , nodeDiv = myApp.createElem('div', {class: 'graph-group'})
-      , graphWidth, graphHeight;
-
+      , containerWidth, containerHeight, animating;
 
     var nodes = [],
         edges = [],
         nodesWithImages = [];
 
-    function edgeOnTop() {
+    function edgeOnTopEvent() {
         edgeDiv.appendChild(this.parentElement);
     }
 
     function addNode(post) {
         var node = new myApp.Node(post);
+        
         nodes.push(node);
         if (node.img) nodesWithImages.push(node);
         nodeDiv.appendChild(node.container);
 
         for (var i = 0; i < post.parents.length; i++) {
             var parent = nodes[post.parents[i]];
+
             var edge = new myApp.Edge(parent, node);
 
             node.parents.push(edge);
             parent.children.push(edge);
+
             edges.push(edge);
-            edge.line.addEventListener('mouseover', edgeOnTop);
+            edge.line.addEventListener('mouseover', edgeOnTopEvent);
             edgeDiv.appendChild(edge.container);
         }
     }
 
     function cacheGraphSize() {
-        graphWidth = container.offsetWidth;
-        graphHeight = container.offsetHeight;
+        containerWidth = container.offsetWidth;
+        containerHeight = container.offsetHeight;
     }
-
-    window.addEventListener('resize', cacheGraphSize);
+    myApp.onWindowResize(cacheGraphSize);
     cacheGraphSize();
 
+    var updateState = function() {
+        var state = {};
+        return function(name, value, callback) {
+            if (state[name] !== value) {
+                state[name] = value;
+                callback(value);
+            }
+        };
+    }();
+
+    function setNodeScale(nodeScale) {
+        for (var i = 0; i < nodes.length; i++) {
+            nodes[i].setScale(nodeScale);
+        }
+    }
+    function setEdgeScale(edgeScale) {
+        for (var i = 0; i < edges.length; i++) {
+            edges[i].setScale(edgeScale);
+        }
+    }
+    function setImageThumbs(useThumb) {
+        for (var i = 0; i < nodesWithImages.length; i++) {
+            nodesWithImages[i].setThumbnail(useThumb);
+        }
+    }
+
     return {
-        transform: function(x, y, s) {
+        transform: function(x, y, s, animate) {
+            if (animate) {
+                graphDiv.style.transition = 'transform ' + animate + 's' + ' ease-out';
+                animating = true;
+            }
+            else if (animating) {
+                graphDiv.style.transition = '';
+                animating = false;
+            }
             graphDiv.style.transform = 'matrix(' + s + ',0,0,' + s + ',' + x + ',' + y + ')';
         },
         nodeScale: function(s) {
-            var invS = 1 / s
-              , nodeScale = Math.min(invS, myApp.constants.nodeScaleLimit)
-              , edgeScale = myApp.constants.edgeWidth * Math.min(invS, myApp.constants.edgeScaleLimit)
-              , thumbnail = invS <= 1.4 ? false : true;
+            var invS = 1 / s;
 
-            for (var i = 0; i < nodes.length; i++) {
-                nodes[i].setScale(nodeScale);
-            }
-            for (var i = 0; i < edges.length; i++) {
-                edges[i].setScale(edgeScale);
-            }
-            for (var i = 0; i < nodesWithImages.length; i++) {
-                nodesWithImages[i].setThumbnail(thumbnail);
-            }
+            updateState('nodeScale', 
+                        Math.min(invS, myApp.constants.nodeScaleLimit), 
+                        setNodeScale);
+            updateState('edgeScale', 
+                         myApp.constants.edgeWidth * Math.min(invS, myApp.constants.edgeScaleLimit), 
+                         setEdgeScale);
+            updateState('useThumb',
+                        invS > 1.4,
+                        setImageThumbs);
         },
-        putNodeOnTop: function(nodeID) {
-            nodeDiv.appendChild(nodes[nodeID].container);
+        putNodeOnTop: function(node) {
+            nodeDiv.appendChild(node.container);
+        },
+        putEdgeOnTop: function(edge) {
+            edgeDiv.appendChild(edge.container);
         },
         addPosts: function(posts) {
             for (var i = 0; i < posts.length; i++) {
@@ -433,15 +471,69 @@ myApp.Graph = function() {
         },
         nodes: nodes,
         container: container,
-        get width() { return graphWidth; },
-        get height() { return graphHeight; }
+        get width() { return containerWidth; },
+        get height() { return containerHeight; }
     };
 };
 
 myApp.InputWrapper = function(elem) {
-    var touchDragInit, touchDrag;
+    var touchDragInit,
+        touchDrag,
+        rect,
+        m = {};
+
+    function cacheRect() {
+        rect = elem.getBoundingClientRect();
+    }
+    myApp.onWindowResize(cacheRect);
+    cacheRect();
+
+    elem.addEventListener('mousemove', function(e) {
+        m.x = e.clientX - rect.left;
+        m.y = e.clientY - rect.top;
+    });
+
+    function touchEvent(e) {
+        m.x = e.touches[0].clientX - rect.left;
+        m.y = e.touches[0].clientY - rect.top;
+        if (e.touches[1]) {
+            m.x2 = e.touches[1].clientX - rect.left;
+            m.y2 = e.touches[1].clientY - rect.top; 
+        }
+    }
+    elem.addEventListener('touchstart', touchEvent);
+    elem.addEventListener('touchmove', touchEvent);
 
     return {
+        hold: function(holdHandler) {
+            var scope = {};
+            holdHandler = holdHandler.bind(scope);
+
+            var animating, startTime, previousTime;
+
+            function interval() {
+                var newTime = Date.now();
+                holdHandler(newTime - startTime, newTime - previousTime, m.x, m.y);
+                previousTime = newTime;
+                if (animating) window.requestAnimationFrame(interval);
+            }
+
+            function mousedown() {
+                animating = true;
+                startTime = Date.now();
+                previousTime = startTime;
+                interval();
+            }
+
+            function mouseup() {
+                animating = false;
+            }
+
+            elem.addEventListener('mousedown', mousedown);
+            elem.addEventListener('mouseup', mouseup);
+            elem.addEventListener('touchstart', mousedown);
+            elem.addEventListener('touchend', mouseup);
+        },
         drag: function(init, dragHandler) {
             var scope = {};
             init = init.bind(scope);
@@ -449,11 +541,11 @@ myApp.InputWrapper = function(elem) {
 
             var mousemoveHandler = function(e) {
                 e.preventDefault();
-                dragHandler(e, e.clientX, e.clientY);
+                dragHandler(m.x, m.y, e);
             };
 
             elem.addEventListener('mousedown', function(e) {
-                init(e, e.clientX, e.clientY);
+                init(m.x, m.y, e);
                 elem.addEventListener('mousemove', mousemoveHandler);
             });
 
@@ -462,16 +554,13 @@ myApp.InputWrapper = function(elem) {
             });
 
             touchDragInit = function(e) {
-                if (e.touches.length === 1) {
-                    init(e, e.touches[0].clientX, e.touches[0].clientY);
-                }
+                if (e.touches.length === 1) init(m.x, m.y, e);
             };
 
             touchDrag = function(e) {
                 e.preventDefault();
-                dragHandler(e, e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+                dragHandler(m.x, m.y, e);
             };
-
             elem.addEventListener('touchstart', touchDragInit);
             elem.addEventListener('touchmove', touchDrag);
         },
@@ -482,13 +571,13 @@ myApp.InputWrapper = function(elem) {
 
             var touchmoveHandler = function(e) {
                 e.preventDefault();
-                pinchHandler(e, e.changedTouches[0].clientX, e.changedTouches[0].clientY, e.changedTouches[1].clientX, e.changedTouches[1].clientY);
+                pinchHandler(m.x, m.y, m.x2, m.y2, e);
             };
             elem.addEventListener('touchstart', function(e) {
                 if (e.touches.length === 2) {
                     if (touchDrag) elem.removeEventListener('touchmove', touchDrag);
                     elem.addEventListener('touchmove', touchmoveHandler);
-                    init(e, e.touches[0].clientX, e.touches[0].clientY, e.touches[1].clientX, e.touches[1].clientY);
+                    init(m.x, m.y, m.x2, m.y2, e);
                 }
             });
 
@@ -509,39 +598,78 @@ myApp.InputWrapper = function(elem) {
 
             elem.addEventListener('wheel', function(e) {
                 e.preventDefault();
-                wheelHandler(e, e.deltaY < 0 ? 1 : -1, e.clientX, e.clientY);
+                wheelHandler(e.deltaY < 0 ? 1 : -1, m.x, m.y, e);
             });
         },
         click: function(clickHandler) {
             var time;
-            elem.addEventListener('mousedown', function(e) {
+            elem.addEventListener('mousedown', function() {
                 time = Date.now();
 
             });
             elem.addEventListener('mouseup', function(e) {
-                if (Date.now() - time < 150) {
-                    clickHandler(e, e.clientX, e.clientY);
+                if (Date.now() - time < 100) {
+                    clickHandler(m.x, m.y, e);
                 }
             });
-        }
+        },
+        get mx() { return m.x; },
+        get my() { return m.y; }
     };
 };
 
 myApp.Controls = function(graph) {
     var t = {x: 0, y: 0, s: 1}
-      , latestHoveredNode = null;
+      , bounds = {}
+      , latestHoveredNode = null
+      , graphEvents = new myApp.InputWrapper(graph.container);
 
-    function applyTransformation() {
-        graph.transform(t.x, t.y, t.s);
+    function distance(x1, y1, x2, y2) {
+        var dx = x2 - x1
+          , dy = y2 - y1;
+        return Math.sqrt(dx * dx + dy * dy);
     }
 
     function applyNodeScale() {
         graph.nodeScale(t.s);
     }
 
-    function relativeMousePos(x, y) {
-        var rect = graph.container.getBoundingClientRect();
-        return [x - rect.left, y - rect.top];
+    function applyTransformation(animate) {
+        var hw = graph.width / 2
+          , hh = graph.height / 2;
+          
+        t.x = myApp.clamp(t.x, -bounds.maxx*t.s + hw, -bounds.minx*t.s + hw);
+        t.y = myApp.clamp(t.y, -bounds.maxy*t.s + hh, -bounds.miny*t.s + hh);
+        graph.transform(t.x, t.y, t.s, animate);
+    }
+
+    function scaleAroundPoint(s, x, y) {
+        s = myApp.clamp(s, 0.9 * Math.min(graph.width / bounds.width, graph.height / bounds.height), 8);
+        var ds = s / t.s;
+        t.x = x - ds * (x - t.x);
+        t.y = y - ds * (y - t.y);
+        t.s = s;
+    }
+
+    function calcBounds() {
+        var minx, maxx, miny, maxy;
+
+        for (var i = 0; i < graph.nodes.length; i++) {
+            var pos = graph.nodes[i].pos;
+            
+            if (i === 0) {
+                minx = maxx = pos[0];
+                miny = maxy = pos[1];
+                continue;
+            }
+            if      (pos[0] < minx) minx = pos[0];
+            else if (pos[0] > maxx) maxx = pos[0];
+            if      (pos[1] < miny) miny = pos[1];
+            else if (pos[1] > maxy) maxy = pos[1];
+        }
+        bounds = {minx: minx, maxx: maxx, miny: miny, maxy: maxy,
+                  width: maxx - minx,
+                  height: maxy - miny};
     }
 
     function centerOn(x, y) {
@@ -552,80 +680,75 @@ myApp.Controls = function(graph) {
     function centerOnNode(node) {
         centerOn(node.pos[0], node.pos[1]);
         applyTransformation();
+        applyNodeScale();
     }
 
-    function distance(x1, y1, x2, y2) {
-        var dispX = x2 - x1
-          , dispY = y2 - y1;
-        return Math.sqrt(dispX * dispX + dispY * dispY);
+    function toggleScale() {
+        if (t.s !== 1) {
+            scaleAroundPoint(1, graphEvents.mx, graphEvents.my);
+            applyTransformation(0.15);
+        }
+        else {
+            scaleAroundPoint(0, graph.width/2, graph.height/2);
+            applyTransformation();
+        }
+        applyNodeScale();
     }
 
-    function nodeOver(e) {
+    function nodeOver() {
         var nodeID = this.dataset.id;
-        
         if (nodeID !== latestHoveredNode) {
-            graph.nodes[nodeID].expand(0.9 * Math.min(graph.width, graph.height));
-            graph.putNodeOnTop(nodeID);
+            var node = graph.nodes[nodeID];
+            node.expand(0.9 * Math.min(graph.width, graph.height));
+            graph.putNodeOnTop(node);
             latestHoveredNode = nodeID;
         }
     }
 
-    function nodeLeave(e) {
+    function nodeLeave() {
         graph.nodes[this.dataset.id].reduce();
         latestHoveredNode = null;
     }
 
-    var graphEvents = new myApp.InputWrapper(graph.container);
+    graphEvents.hold(function(totalTime, elapsed, x, y) {
+        var dx = 1 - 2 * x / graph.width
+          , dy = 1 - 2 * y / graph.height
+          , accel = totalTime / 325
+          , velocity = Math.min(accel*accel, 1) * elapsed * 1.2;
 
-    graphEvents.drag(
-        function(e, x, y) {
-            this.lastX = x;
-            this.lastY = y;
-        }, 
-        function(e, x, y) {
-            t.x += x - this.lastX;
-            t.y += y - this.lastY;
-            applyTransformation();
-            this.lastX = x;
-            this.lastY = y;
-        }
-    );
+        t.x += dx * Math.abs(dx) * velocity * graph.width / graph.height;
+        t.y += dy * Math.abs(dy) * velocity;
+        applyTransformation();
+    });
 
-    graphEvents.click(function(e, x, y) {
-        var p = relativeMousePos(x, y);
-        centerOn(p[0], p[1]);
+    graphEvents.click(function(x, y) {
+        centerOn(x, y);
         applyTransformation();
     });
 
     graphEvents.pinch(
-        function(e, x1, y1, x2, y2) {
+        function(x1, y1, x2, y2) {
             this.prevDistance = distance(x1, y1, x2, y2);
         },
-        function(e, x1, y1, x2, y2) {
+        function(x1, y1, x2, y2) {
             var newDistance = distance(x1, y1, x2, y2)
-              , ds = newDistance / this.prevDistance
-              , pos = relativeMousePos((x1 + x2) / 2, (y1 + y2) / 2);
+              , ds = newDistance / this.prevDistance;
             
-            t.x = pos[0] - ds * (pos[0] - t.x);
-            t.y = pos[1] - ds * (pos[1] - t.y);
-            t.s *= ds;
+            scaleAroundPoint(t.s * ds, (x1 + x2) / 2, (y1 + y2) / 2);
             this.prevDistance = newDistance;
             applyTransformation();
         },
-        function(e) {
+        function() {
             applyNodeScale();
         }
     );
 
     graphEvents.wheel(
-        function(e, dir, x, y) {
-            var scaleAmount = 1.35
-              , ds = dir === 1 ? scaleAmount : 1 / scaleAmount
-              , pos = relativeMousePos(x, y);
+        function(dir, x, y) {
+            var scaleAmount = 1.4
+              , ds = dir === 1 ? scaleAmount : 1 / scaleAmount;
 
-            t.x = pos[0] - ds * (pos[0] - t.x);
-            t.y = pos[1] - ds * (pos[1] - t.y);
-            t.s *= ds;
+            scaleAroundPoint(t.s * ds, x, y);
             applyTransformation();
             applyNodeScale();
         }
@@ -636,6 +759,12 @@ myApp.Controls = function(graph) {
         graph.nodes[i].container.addEventListener('mouseleave', nodeLeave);
     }
 
+    window.addEventListener('keypress', function(e) {
+        if (e.which === 32) toggleScale(); //space bar
+    });
+
+    calcBounds();
+
     return {
         centerOnNode: centerOnNode
     };
@@ -644,11 +773,13 @@ myApp.Controls = function(graph) {
 function replyPreview(graph, posts) {
     var rePostNo = /\d+/;
 
-    function quoteHover(e) {
-        graph.nodes[this.dataset.id].parents[this.dataset.order].highlightOn();
+    function quoteHover() {
+        var edge = graph.nodes[this.dataset.id].parents[this.dataset.order];
+        edge.highlightOn();
+        graph.putEdgeOnTop(edge);
     }
 
-    function quoteLeave(e) {
+    function quoteLeave() {
         graph.nodes[this.dataset.id].parents[this.dataset.order].highlightOff();
     }
 

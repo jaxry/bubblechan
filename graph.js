@@ -1,3 +1,5 @@
+'use strict';
+
 var childProcess = require('child_process');
 var http = require('http');
 
@@ -11,19 +13,19 @@ function copyProperties(props, from, to) {
 }
 
 function makeThreadObject(jsonThread, board) {
-    var thread = {}
-      , jsonPosts = jsonThread.posts
-      , op = jsonPosts[0]
-      , postTable = {}
-      , lastUnrepliedPost;
+    var thread = {},
+        jsonPosts = jsonThread.posts,
+        op = jsonPosts[0],
+        postTable = {},
+        lastUnrepliedPost;
 
-    thread.title = op.semantic_url;
+    thread.title = op.sub || op.semantic_url.split('-').join(' ');
     thread.replyCount = op.replies;
     thread.posts = new Array(jsonPosts.length);
 
     for (var i = 0; i < jsonPosts.length; i++) {
-        var post = {}
-          , jp = jsonPosts[i];
+        var post = {},
+            jp = jsonPosts[i];
 
         copyProperties(['no', 'name', 'trip', 'com', 'filename', 'ext', 'time'], jp, post);
         
@@ -39,7 +41,8 @@ function makeThreadObject(jsonThread, board) {
 
         postTable[post.no] = i;
 
-        var parents = [];
+        var parents = [],
+            match;
         while(match = reQuotes.exec(post.com)) {
             parents.push(postTable[match[1]]);
         }
@@ -75,8 +78,8 @@ function runForceDirect(posts, callback) {
         callback(posts);
     }
 
-    var edgeString = ''
-      , edgeCount = 0;
+    var edgeString = '',
+        edgeCount = 0;
 
     for (var i = 0; i < posts.length; i++) {
         var post = posts[i];

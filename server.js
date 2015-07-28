@@ -1,3 +1,5 @@
+'use strict';
+
 var express = require('express');
 var threadRouter = require('./routes/thread');
 var app = express();

@@ -9,7 +9,6 @@ myApp.constants = {
     highlight: '#ffa',
 
     graphScale: 140,
-
     maxNodeSize: 230,
     imageNodeSize: 200,
     minNodeSize: 90,
@@ -17,16 +16,16 @@ myApp.constants = {
     edgeWidth: 12,
     arrowMargin: 15,
     baseMargin: 0,
-    arrowWidth: document.getElementById('Arrow').getAttribute('markerWidth'),
-    baseWidth: document.getElementById('Circle-reply').getAttribute('markerWidth') / 2.5 - 0.1,
 
     edgeScaleLimit: 10,
     nodeScaleLimit: 1,
 
-    nodeExpandDuration: 0.2
+    nodeExpandDuration: 200
 };
 
 myApp.constants.time = Date.now();
+myApp.constants.arrowWidth = document.getElementById('Arrow').getAttribute('markerWidth');
+myApp.constants.baseWidth = document.getElementById('Circle-reply').getAttribute('markerWidth') / 2.5 - 0.1;
 myApp.constants.edgeSVGPadding = myApp.constants.edgeScaleLimit * myApp.constants.edgeWidth;
 
 myApp.onWindowResize = function(callback) {
@@ -38,7 +37,7 @@ myApp.onWindowResize = function(callback) {
     }
 
     window.addEventListener('resize', callbackWithDelay);
-}
+};
 
 myApp.setAttributes = function(elem, attrs) {
     for (var a in attrs) {
@@ -63,8 +62,8 @@ myApp.clamp = function(x, min, max) {
 };
 
 myApp.timeElapsed = function(t) {
-    var minutes = (myApp.constants.time / 1000 - t) / 60
-      , elapsed, verbose;
+    var minutes = (myApp.constants.time / 1000 - t) / 60,
+        elapsed, verbose;
 
     if (minutes < 60) {
         elapsed = Math.round(minutes);
@@ -85,12 +84,10 @@ myApp.animate = (function() {
         return c/2*((t-=2)*t*t + 2) + b;
     }
 
-    return function(from, to, duration, callback, callbackScope) {
+    return function(from, to, duration, callback, finish, callbackScope) {
         
-        var changeInValue = to - from
-          , startTime = Date.now();
-
-        duration *= 1000;
+        var changeInValue = to - from,
+            startTime = Date.now();
         
         function step() {
             var time = Date.now() - startTime;
@@ -100,6 +97,9 @@ myApp.animate = (function() {
 
             if (time < duration) {
                 requestAnimationFrame(step);
+            }
+            else if (finish) {
+                finish.call(callbackScope);
             }
         }
 
@@ -120,8 +120,8 @@ myApp.Node = function(post) {
         this.img = { 
             full: post.img, 
             thumb: post.thumb, 
-            isFull: false,
-            max: Math.max(post.width, post.height)
+            isWebm: post.ext === '.webm',
+            max: Math.max(post.width, post.height),
         };
     }
 
@@ -156,13 +156,13 @@ myApp.Node.prototype = {
         if (this.size.isExpanded) return;
 
         var expandTo = this.img ? myApp.clamp(this.img.max, this.size.full, maxRadius) : this.size.full;
-        myApp.animate(this.size.current, expandTo, myApp.constants.nodeExpandDuration, this.setRadius, this);
+        myApp.animate(this.size.current, expandTo, myApp.constants.nodeExpandDuration, this.setRadius, null, this);
         this.container.classList.add('expanded');
 
         this.size.isExpanded = true;
     },
     reduce: function() {
-        myApp.animate(this.size.current, this.size.reduced, myApp.constants.nodeExpandDuration, this.setRadius, this);
+        myApp.animate(this.size.current, this.size.reduced, myApp.constants.nodeExpandDuration, this.setRadius, null, this);
         this.container.classList.remove('expanded');
 
         this.size.isExpanded = false;
@@ -173,7 +173,6 @@ myApp.Node.prototype = {
     },
     setThumbnail: function(thumb) {
         this.container.style['background-image'] = 'url(' + (thumb ? this.img.thumb : this.img.full) + ')';
-        this.img.isFull = !thumb;
     },
     highlightOn: function() {
         this.container.classList.add('node-highlight');
@@ -210,7 +209,7 @@ myApp.Node.prototype = {
 
         if (this.img) {
             this.content.appendChild(this._createFooter(post));
-            this.setThumbnail(false);
+            this.setThumbnail(this.img.isWebm);
             this.container.classList.add('node-image');
         }
 
@@ -224,7 +223,6 @@ myApp.Node.prototype = {
 
         this.setRadius(this.size.current);
         this.cacheRadius();
-        this.updateTransform();
     },
     _calcWidth: function() {
         // resize the content to a square. Multiple iterations are required for maximum precision.
@@ -280,10 +278,10 @@ myApp.Edge = function(parent, child) {
 
 myApp.Edge.prototype = {
     _renderEdge: function(iteration) {
-        var radius1 = (this.parent.radius + myApp.constants.baseMargin) * this.parent.scale + this.strokeWidth * myApp.constants.baseWidth
-          , radius2 = (this.child.radius + myApp.constants.arrowMargin) * this.child.scale + this.strokeWidth * myApp.constants.arrowWidth
-          , x1 = this.parent.pos[0] - this.c.dirX * radius1
-          , x2 = this.child.pos[0] + this.c.dirX * radius2;
+        var radius1 = (this.parent.radius + myApp.constants.baseMargin) * this.parent.scale + this.strokeWidth * myApp.constants.baseWidth,
+            radius2 = (this.child.radius + myApp.constants.arrowMargin) * this.child.scale + this.strokeWidth * myApp.constants.arrowWidth,
+            x1 = this.parent.pos[0] - this.c.dirX * radius1,
+            x2 = this.child.pos[0] + this.c.dirX * radius2;
 
         if (x1 - x2 > 0 !== this.c.dirX > 0 && iteration < 3) {
             this.strokeWidth /= 2;
@@ -291,8 +289,8 @@ myApp.Edge.prototype = {
             return;
         }
 
-        var y1 = this.parent.pos[1] - this.c.dirY * radius1
-          , y2 = this.child.pos[1] + this.c.dirY * radius2;
+        var y1 = this.parent.pos[1] - this.c.dirY * radius1,
+            y2 = this.child.pos[1] + this.c.dirY * radius2;
                     
         var attributes = {
             x1: x1 - this.dim.left,
@@ -305,7 +303,7 @@ myApp.Edge.prototype = {
         myApp.setAttributes(this.line, attributes);
         if (this.gradient) myApp.setAttributes(this.gradient, attributes);
     },
-    update: function(modifiedStrokeWidth) {
+    update: function() {
         this.strokeWidth = this.idealStrokeWidth;
         this._renderEdge(0);
     }, 
@@ -331,8 +329,8 @@ myApp.Edge.prototype = {
         this.container.style.top = this.dim.top + 'px';
         this.container.style.left = this.dim.left + 'px';
 
-        var start = myApp.constants[this.parent.type]
-          , stop = myApp.constants[this.child.type];
+        var start = myApp.constants[this.parent.type],
+            stop = myApp.constants[this.child.type];
 
         if (start === stop) {
             this.stroke = stop;
@@ -357,17 +355,16 @@ myApp.Edge.prototype = {
         this.container.appendChild(this.line);
 
         this.highlightOff();
-        this.setScale(myApp.constants.edgeWidth);
     }
 };
 
 myApp.Graph = function() {
 
-    var container = document.getElementById('graph-container')
-      , graphDiv = container.appendChild(myApp.createElem('div', {id: 'graph'}))
-      , edgeDiv = myApp.createElem('div', {class: 'graph-group'})
-      , nodeDiv = myApp.createElem('div', {class: 'graph-group'})
-      , containerWidth, containerHeight, animating;
+    var container = document.getElementById('graph-container'),
+        graphDiv = container.appendChild(myApp.createElem('div', {id: 'graph'})),
+        edgeDiv = myApp.createElem('div', {class: 'graph-group'}),
+        nodeDiv = myApp.createElem('div', {class: 'graph-group'}),
+        containerWidth, containerHeight;
 
     var nodes = [],
         edges = [],
@@ -381,7 +378,7 @@ myApp.Graph = function() {
         var node = new myApp.Node(post);
         
         nodes.push(node);
-        if (node.img) nodesWithImages.push(node);
+        if (node.img && !node.img.isWebm) nodesWithImages.push(node);
         nodeDiv.appendChild(node.container);
 
         for (var i = 0; i < post.parents.length; i++) {
@@ -432,15 +429,7 @@ myApp.Graph = function() {
     }
 
     return {
-        transform: function(x, y, s, animate) {
-            if (animate) {
-                graphDiv.style.transition = 'transform ' + animate + 's' + ' ease-out';
-                animating = true;
-            }
-            else if (animating) {
-                graphDiv.style.transition = '';
-                animating = false;
-            }
+        transform: function(x, y, s) {
             graphDiv.style.transform = 'matrix(' + s + ',0,0,' + s + ',' + x + ',' + y + ')';
         },
         nodeScale: function(s) {
@@ -608,7 +597,7 @@ myApp.InputWrapper = function(elem) {
 
             });
             elem.addEventListener('mouseup', function(e) {
-                if (Date.now() - time < 100) {
+                if (Date.now() - time < 225) {
                     clickHandler(m.x, m.y, e);
                 }
             });
@@ -619,28 +608,54 @@ myApp.InputWrapper = function(elem) {
 };
 
 myApp.Controls = function(graph) {
-    var t = {x: 0, y: 0, s: 1}
-      , bounds = {}
-      , latestHoveredNode = null
-      , graphEvents = new myApp.InputWrapper(graph.container);
+    var t = {x: 0, y: 0, s: 1},
+        prevT = {},
+        bounds = {},
+        graphEvents = new myApp.InputWrapper(graph.container);
 
     function distance(x1, y1, x2, y2) {
-        var dx = x2 - x1
-          , dy = y2 - y1;
+        var dx = x2 - x1,
+            dy = y2 - y1;
         return Math.sqrt(dx * dx + dy * dy);
     }
 
-    function applyNodeScale() {
-        graph.nodeScale(t.s);
+    function copyT() {
+        prevT.x = t.x;
+        prevT.y = t.y;
+        prevT.s = t.s;
     }
 
-    function applyTransformation(animate) {
-        var hw = graph.width / 2
-          , hh = graph.height / 2;
-          
-        t.x = myApp.clamp(t.x, -bounds.maxx*t.s + hw, -bounds.minx*t.s + hw);
-        t.y = myApp.clamp(t.y, -bounds.maxy*t.s + hh, -bounds.miny*t.s + hh);
-        graph.transform(t.x, t.y, t.s, animate);
+    function animateTransformation(animateDur) {
+        var newX = t.x,
+            newY = t.y,
+            newS = t.s;
+
+        function step(v) {
+            t.x = prevT.x + (newX - prevT.x) * v;
+            t.y = prevT.y + (newY - prevT.y) * v;
+            t.s = prevT.s + (newS - prevT.s) * v;
+            graph.transform(t.x, t.y, t.s);
+        }
+
+        myApp.animate(0, 1, animateDur, step, copyT);
+    }
+
+    function applyTransformation(nodeScale, animateDur) {
+        var hw = graph.width / 2,
+            hh = graph.height / 2;
+
+        t.x = myApp.clamp(t.x, -bounds.maxX*t.s + hw, -bounds.minX*t.s + hw);
+        t.y = myApp.clamp(t.y, -bounds.maxY*t.s + hh, -bounds.minY*t.s + hh);
+
+        if (nodeScale) graph.nodeScale(t.s);
+
+        if (animateDur) {
+            animateTransformation(animateDur);
+        }
+        else {
+            graph.transform(t.x, t.y, t.s);
+            copyT();
+        }
     }
 
     function scaleAroundPoint(s, x, y) {
@@ -651,51 +666,132 @@ myApp.Controls = function(graph) {
         t.s = s;
     }
 
+    function centerOn(x, y) {
+        t.x = 0.5 * graph.width - x * t.s;
+        t.y = 0.5 * graph.height - y * t.s;
+    }
+
     function calcBounds() {
-        var minx, maxx, miny, maxy;
+        var minX, maxX, minY, maxY;
 
         for (var i = 0; i < graph.nodes.length; i++) {
             var pos = graph.nodes[i].pos;
             
             if (i === 0) {
-                minx = maxx = pos[0];
-                miny = maxy = pos[1];
+                minX = maxX = pos[0];
+                minY = maxY = pos[1];
                 continue;
             }
-            if      (pos[0] < minx) minx = pos[0];
-            else if (pos[0] > maxx) maxx = pos[0];
-            if      (pos[1] < miny) miny = pos[1];
-            else if (pos[1] > maxy) maxy = pos[1];
+            if      (pos[0] < minX) minX = pos[0];
+            else if (pos[0] > maxX) maxX = pos[0];
+            if      (pos[1] < minY) minY = pos[1];
+            else if (pos[1] > maxY) maxY = pos[1];
         }
-        bounds = {minx: minx, maxx: maxx, miny: miny, maxy: maxy,
-                  width: maxx - minx,
-                  height: maxy - miny};
-    }
-
-    function centerOn(x, y) {
-        t.x = -(x - t.x) + graph.width / 2;
-        t.y = -(y - t.y) + graph.height / 2;
-    }
-
-    function centerOnNode(node) {
-        centerOn(node.pos[0], node.pos[1]);
-        applyTransformation();
-        applyNodeScale();
+        bounds = {
+            minX: minX, 
+            maxX: maxX, 
+            minY: minY, 
+            maxY: maxY,
+            width: maxX - minX,
+            height: maxY - minY,
+            centerX: (minX + maxX) / 2,
+            centerY: (minY + maxY) / 2
+        };
     }
 
     function toggleScale() {
         if (t.s !== 1) {
             scaleAroundPoint(1, graphEvents.mx, graphEvents.my);
-            applyTransformation(0.15);
         }
         else {
             scaleAroundPoint(0, graph.width/2, graph.height/2);
-            applyTransformation();
         }
-        applyNodeScale();
+        applyTransformation(true, 300);
     }
 
-    function nodeOver() {
+    graphEvents.hold(function(totalTime, elapsed, x, y) {
+        var dx = 1 - 2 * x / graph.width,
+            dy = 1 - 2 * y / graph.height,
+            accel = totalTime / 325,
+            velocity = Math.min(accel*accel, 1) * elapsed * 1.3;
+
+        t.x += dx * Math.abs(dx) * velocity * graph.width / graph.height;
+        t.y += dy * Math.abs(dy) * velocity;
+        applyTransformation();
+    });
+
+    graphEvents.click(function(x, y) {
+        centerOn(x - t.x, y - t.y);
+        applyTransformation();
+    });
+
+    graphEvents.pinch(
+        function(x1, y1, x2, y2) {
+            this.prevDistance = distance(x1, y1, x2, y2);
+        },
+        function(x1, y1, x2, y2) {
+            var newDistance = distance(x1, y1, x2, y2),
+                ds = newDistance / this.prevDistance;
+
+            scaleAroundPoint(t.s * ds, (x1 + x2) / 2, (y1 + y2) / 2);
+            this.prevDistance = newDistance;
+            applyTransformation();
+        },
+        function() {
+            applyTransformation(true);
+        }
+    );
+
+    graphEvents.wheel(
+        function(dir, x, y) {
+            
+            var scaleAmount = 1.4,
+                ds = dir === 1 ? scaleAmount : 1 / scaleAmount,
+                newScale = t.s * ds;
+
+            if (Math.round(t.s * 2) / 2 === 1) {
+                if (!this.stick) this.stick = 5;
+                if (this.stick++ < 5) newScale = 1;
+                else this.stick = 1;
+            }
+
+            scaleAroundPoint(newScale, x, y);
+            applyTransformation(true);
+        }
+    );
+
+    window.addEventListener('keypress', function(e) {
+        if (e.which === 32) toggleScale(); //spacebar
+    });
+
+    calcBounds();
+
+    return {
+        centerOnOp: function() {
+            var x = graph.nodes[0].pos[0],
+                y = graph.nodes[0].pos[1];
+
+            scaleAroundPoint(0, 0, 0);
+            centerOn(bounds.centerX, bounds.centerY);
+            applyTransformation(true);
+
+            centerOn(x, y);
+            applyTransformation(true, 2000);
+
+            setTimeout(function() {
+                scaleAroundPoint(1, 0, 0);
+                centerOn(x, y);
+                applyTransformation(true, 1000);
+            }, 2100);
+        }
+    };
+
+};
+
+function nodeInteraction(graph) {
+    var latestHoveredNode;
+
+    function nodeHover() {
         var nodeID = this.dataset.id;
         if (nodeID !== latestHoveredNode) {
             var node = graph.nodes[nodeID];
@@ -709,69 +805,6 @@ myApp.Controls = function(graph) {
         graph.nodes[this.dataset.id].reduce();
         latestHoveredNode = null;
     }
-
-    graphEvents.hold(function(totalTime, elapsed, x, y) {
-        var dx = 1 - 2 * x / graph.width
-          , dy = 1 - 2 * y / graph.height
-          , accel = totalTime / 325
-          , velocity = Math.min(accel*accel, 1) * elapsed * 1.2;
-
-        t.x += dx * Math.abs(dx) * velocity * graph.width / graph.height;
-        t.y += dy * Math.abs(dy) * velocity;
-        applyTransformation();
-    });
-
-    graphEvents.click(function(x, y) {
-        centerOn(x, y);
-        applyTransformation();
-    });
-
-    graphEvents.pinch(
-        function(x1, y1, x2, y2) {
-            this.prevDistance = distance(x1, y1, x2, y2);
-        },
-        function(x1, y1, x2, y2) {
-            var newDistance = distance(x1, y1, x2, y2)
-              , ds = newDistance / this.prevDistance;
-            
-            scaleAroundPoint(t.s * ds, (x1 + x2) / 2, (y1 + y2) / 2);
-            this.prevDistance = newDistance;
-            applyTransformation();
-        },
-        function() {
-            applyNodeScale();
-        }
-    );
-
-    graphEvents.wheel(
-        function(dir, x, y) {
-            var scaleAmount = 1.4
-              , ds = dir === 1 ? scaleAmount : 1 / scaleAmount;
-
-            scaleAroundPoint(t.s * ds, x, y);
-            applyTransformation();
-            applyNodeScale();
-        }
-    );
-
-    for (var i = 0; i < graph.nodes.length; i++) {
-        graph.nodes[i].container.addEventListener('mouseover', nodeOver);
-        graph.nodes[i].container.addEventListener('mouseleave', nodeLeave);
-    }
-
-    window.addEventListener('keypress', function(e) {
-        if (e.which === 32) toggleScale(); //space bar
-    });
-
-    calcBounds();
-
-    return {
-        centerOnNode: centerOnNode
-    };
-};
-
-function replyPreview(graph, posts) {
-    var rePostNo = /\d+/;
 
     function quoteHover() {
         var edge = graph.nodes[this.dataset.id].parents[this.dataset.order];
@@ -787,6 +820,9 @@ function replyPreview(graph, posts) {
         for (var i = 0; i < nodes.length; i++) {
             
             var node = graph.nodes[i];
+
+            node.container.addEventListener('mouseover', nodeHover);
+            node.container.addEventListener('mouseleave', nodeLeave);
 
             if (node.type !== 'reply') continue;
             
@@ -805,7 +841,6 @@ function replyPreview(graph, posts) {
     processNodes(graph.nodes);
 }
 
-
 (function() {
     // var time = Date.now();
 
@@ -813,7 +848,8 @@ function replyPreview(graph, posts) {
     graph.addPosts(myApp.thread.posts);
 
     var controls = myApp.Controls(graph);
-    controls.centerOnNode(graph.nodes[0]);
-    replyPreview(graph, myApp.thread.posts);
+    nodeInteraction(graph);
+
+    controls.centerOnOp();
     // alert((Date.now() - time) + ' ms');
 }());

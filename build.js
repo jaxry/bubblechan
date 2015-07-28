@@ -1,3 +1,5 @@
+'use strict';
+
 var fs = require('fs');
 var childProcess = require('child_process');
 

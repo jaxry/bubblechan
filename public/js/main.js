@@ -721,7 +721,7 @@ myApp.Controls = function(graph) {
     });
 
     graphEvents.click(function(x, y) {
-        centerOn(x - t.x, y - t.y);
+        centerOn((x - t.x) / t.s, (y - t.y) / t.s);
         applyTransformation();
     });
 

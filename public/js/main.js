@@ -17,13 +17,17 @@ myApp.constants = {
     arrowMargin: 15,
     baseMargin: 0,
 
-    edgeScaleLimit: 10,
+    edgeScaleLimit: 9,
     nodeScaleLimit: 1,
 
-    nodeExpandDuration: 200
+    nodeExpandDuration: 200,
+
+    wheelStick: 5,
+    panSensitivity: 1.3
 };
 
 myApp.constants.time = Date.now();
+myApp.constants.maxNodeScale = myApp.constants.graphScale;
 myApp.constants.arrowWidth = document.getElementById('Arrow').getAttribute('markerWidth');
 myApp.constants.baseWidth = document.getElementById('Circle-reply').getAttribute('markerWidth') / 2.5 - 0.1;
 myApp.constants.edgeSVGPadding = myApp.constants.edgeScaleLimit * myApp.constants.edgeWidth;
@@ -112,6 +116,7 @@ myApp.Node = function(post) {
     this.no = post.no;
     this.type = post.type;
     this.pos = [post.pos[0] * myApp.constants.graphScale, post.pos[1] * myApp.constants.graphScale];
+    this.centrality = post.centrality;
     this.scale = 1.0;
     this.parents = [];
     this.children = [];
@@ -143,36 +148,46 @@ myApp.Node.prototype = {
     cacheRadius: function() {
         this.radius = this.container.offsetWidth / 2;
     },
-    setRadius: function(value) {
+    setRadius: function(value, noUpdate) {
         this.size.current = value;
 
         this.content.style.width = this.content.style.height = value / 1.41 + 'px';
         this.container.style.width = this.container.style.height = value + 'px';
-        this.cacheRadius();
-        this.updateEdges();
 
+        this.cacheRadius();
+        if (!noUpdate) this.updateEdges();
     },
     expand: function(maxRadius) {
         if (this.size.isExpanded) return;
 
         var expandTo = this.img ? myApp.clamp(this.img.max, this.size.full, maxRadius) : this.size.full;
         myApp.animate(this.size.current, expandTo, myApp.constants.nodeExpandDuration, this.setRadius, null, this);
-        this.container.classList.add('expanded');
+       
+       this.container.classList.add('expanded');
+
+        if (this.img && this.img.usingThumb) this.setThumbnail(false, true);
 
         this.size.isExpanded = true;
     },
     reduce: function() {
         myApp.animate(this.size.current, this.size.reduced, myApp.constants.nodeExpandDuration, this.setRadius, null, this);
         this.container.classList.remove('expanded');
-
+        
+        if (this.img && this.img.usingThumb) this.setThumbnail(true, true);
+        
         this.size.isExpanded = false;
     },
     setScale: function(s) {
         this.scale = s;
         this.updateTransform();
     },
-    setThumbnail: function(thumb) {
+    setScaleWithCentrality: function(baseScale, interpolation) {
+        this.scale = 1 + (Math.min(this.centrality, 15) * baseScale / this.size.reduced - 1) * interpolation;
+        this.updateTransform();
+    },
+    setThumbnail: function(thumb, noStatusUpdate) {
         this.container.style['background-image'] = 'url(' + (thumb ? this.img.thumb : this.img.full) + ')';
+        if (!noStatusUpdate) this.img.usingThumb = thumb;
     },
     highlightOn: function() {
         this.container.classList.add('node-highlight');
@@ -221,8 +236,9 @@ myApp.Node.prototype = {
         this.size.full = expandedWidth * 1.48;
         this.size.current = this.size.reduced;
 
-        this.setRadius(this.size.current);
-        this.cacheRadius();
+        this.container.style['border-width'] = 3 * Math.pow(this.centrality, 0.75) + 'px';
+
+        this.setRadius(this.size.current, true);
     },
     _calcWidth: function() {
         // resize the content to a square. Multiple iterations are required for maximum precision.
@@ -278,7 +294,7 @@ myApp.Edge = function(parent, child) {
 
 myApp.Edge.prototype = {
     _renderEdge: function(iteration) {
-        var radius1 = (this.parent.radius + myApp.constants.baseMargin) * this.parent.scale + this.strokeWidth * myApp.constants.baseWidth,
+        var radius1 = (this.parent.radius + myApp.constants.baseMargin) * this.parent.scale + this.strokeWidth * (this.isBaseVisible ? myApp.constants.baseWidth : 0),
             radius2 = (this.child.radius + myApp.constants.arrowMargin) * this.child.scale + this.strokeWidth * myApp.constants.arrowWidth,
             x1 = this.parent.pos[0] - this.c.dirX * radius1,
             x2 = this.child.pos[0] + this.c.dirX * radius2;
@@ -311,15 +327,26 @@ myApp.Edge.prototype = {
         this.idealStrokeWidth = s;
         this.update();
     },
+    showBase: function(visible, highlight) {
+        if (visible) {
+            var type = highlight ? 'highlight' : this.parent.type;
+            this.line.setAttribute('marker-start', 'url(#Circle-' + type + ')');
+            this.isBaseVisible = true;
+        }
+        else {
+            this.line.setAttribute('marker-start', '');
+            this.isBaseVisible = false;
+        }
+    },
     highlightOn: function() {
         this.line.setAttribute('stroke', myApp.constants.highlight);
-        this.line.setAttribute('marker-start', 'url(#Circle-highlight)');
+        this.showBase(this.isBaseVisible, true);
         this.parent.highlightOn();
         this.child.highlightOn();
     },
     highlightOff: function() {
         this.line.setAttribute('stroke', this.stroke);
-        this.line.setAttribute('marker-start', 'url(#Circle-' + this.parent.type + ')');
+        this.showBase(this.isBaseVisible, false);
         this.parent.highlightOff();
         this.child.highlightOff();
     },
@@ -364,7 +391,8 @@ myApp.Graph = function() {
         graphDiv = container.appendChild(myApp.createElem('div', {id: 'graph'})),
         edgeDiv = myApp.createElem('div', {class: 'graph-group'}),
         nodeDiv = myApp.createElem('div', {class: 'graph-group'}),
-        containerWidth, containerHeight;
+        containerWidth, containerHeight, resizeCallbacks = [],
+        maxCentrality = 0;
 
     var nodes = [],
         edges = [],
@@ -379,6 +407,8 @@ myApp.Graph = function() {
         
         nodes.push(node);
         if (node.img && !node.img.isWebm) nodesWithImages.push(node);
+        if (node.centrality > maxCentrality) maxCentrality = node.centrality;
+        
         nodeDiv.appendChild(node.container);
 
         for (var i = 0; i < post.parents.length; i++) {
@@ -391,6 +421,7 @@ myApp.Graph = function() {
 
             edges.push(edge);
             edge.line.addEventListener('mouseover', edgeOnTopEvent);
+
             edgeDiv.appendChild(edge.container);
         }
     }
@@ -398,6 +429,9 @@ myApp.Graph = function() {
     function cacheGraphSize() {
         containerWidth = container.offsetWidth;
         containerHeight = container.offsetHeight;
+        for (var i = 0; i < resizeCallbacks.length; i++) {
+            resizeCallbacks[i]();
+        }
     }
     myApp.onWindowResize(cacheGraphSize);
     cacheGraphSize();
@@ -412,14 +446,10 @@ myApp.Graph = function() {
         };
     }();
 
-    function setNodeScale(nodeScale) {
-        for (var i = 0; i < nodes.length; i++) {
-            nodes[i].setScale(nodeScale);
-        }
-    }
-    function setEdgeScale(edgeScale) {
+
+    function edgeBaseVisible(visible) {
         for (var i = 0; i < edges.length; i++) {
-            edges[i].setScale(edgeScale);
+            edges[i].showBase(visible);
         }
     }
     function setImageThumbs(useThumb) {
@@ -432,21 +462,35 @@ myApp.Graph = function() {
         transform: function(x, y, s) {
             graphDiv.style.transform = 'matrix(' + s + ',0,0,' + s + ',' + x + ',' + y + ')';
         },
-        nodeScale: function(s) {
-            var invS = 1 / s;
+        nodeScale: function(s, minScale) {
+            var invS = 1 / s,
+                edgeScale = myApp.constants.edgeWidth * Math.min(invS, myApp.constants.edgeScaleLimit);
 
-            updateState('nodeScale', 
-                        Math.min(invS, myApp.constants.nodeScaleLimit), 
-                        setNodeScale);
-            updateState('edgeScale', 
-                         myApp.constants.edgeWidth * Math.min(invS, myApp.constants.edgeScaleLimit), 
-                         setEdgeScale);
-            updateState('useThumb',
-                        invS > 1.4,
-                        setImageThumbs);
-        },
-        putNodeOnTop: function(node) {
-            nodeDiv.appendChild(node.container);
+            if (s >= 1) {
+                for (var i = 0; i < nodes.length; i++) {
+                    nodes[i].setScale(invS);
+                }
+                updateState('baseVisible', true, edgeBaseVisible);
+            }
+            else {
+
+                // alternative node scaling
+                // var baseScale = invS * myApp.constants.maxNodeScale / maxCentrality,
+                //     interpolation = (s - 1) / (minScale - 1);
+
+                var baseScale = myApp.constants.maxNodeScale,
+                    interpolation = (invS - 1) / (1/minScale - 1);
+
+                for (var i = 0; i < nodes.length; i++) {
+                    nodes[i].setScaleWithCentrality(baseScale, interpolation);
+                }
+                updateState('baseVisible', false, edgeBaseVisible);
+            }
+            for (var i = 0; i < edges.length; i++) {
+                edges[i].setScale(edgeScale);
+            }
+
+            updateState('useThumb', s < 1, setImageThumbs);
         },
         putEdgeOnTop: function(edge) {
             edgeDiv.appendChild(edge.container);
@@ -455,8 +499,12 @@ myApp.Graph = function() {
             for (var i = 0; i < posts.length; i++) {
                 addNode(posts[i]);
             }
+
             graphDiv.appendChild(edgeDiv);
             graphDiv.appendChild(nodeDiv);
+        },
+        onresize: function(callback) {
+            resizeCallbacks.push(callback);
         },
         nodes: nodes,
         container: container,
@@ -611,6 +659,7 @@ myApp.Controls = function(graph) {
     var t = {x: 0, y: 0, s: 1},
         prevT = {},
         bounds = {},
+        minScale,
         graphEvents = new myApp.InputWrapper(graph.container);
 
     function distance(x1, y1, x2, y2) {
@@ -647,7 +696,7 @@ myApp.Controls = function(graph) {
         t.x = myApp.clamp(t.x, -bounds.maxX*t.s + hw, -bounds.minX*t.s + hw);
         t.y = myApp.clamp(t.y, -bounds.maxY*t.s + hh, -bounds.minY*t.s + hh);
 
-        if (nodeScale) graph.nodeScale(t.s);
+        if (nodeScale) graph.nodeScale(t.s, minScale);
 
         if (animateDur) {
             animateTransformation(animateDur);
@@ -658,8 +707,12 @@ myApp.Controls = function(graph) {
         }
     }
 
+    function setMinScale() {
+        minScale = 0.9 * Math.min(graph.width / bounds.width, graph.height / bounds.height);
+    }
+
     function scaleAroundPoint(s, x, y) {
-        s = myApp.clamp(s, 0.9 * Math.min(graph.width / bounds.width, graph.height / bounds.height), 8);
+        s = myApp.clamp(s, minScale, 8);
         var ds = s / t.s;
         t.x = x - ds * (x - t.x);
         t.y = y - ds * (y - t.y);
@@ -713,7 +766,7 @@ myApp.Controls = function(graph) {
         var dx = 1 - 2 * x / graph.width,
             dy = 1 - 2 * y / graph.height,
             accel = totalTime / 325,
-            velocity = Math.min(accel*accel, 1) * elapsed * 1.3;
+            velocity = Math.min(accel*accel, 1) * elapsed * myApp.constants.panSensitivity;
 
         t.x += dx * Math.abs(dx) * velocity * graph.width / graph.height;
         t.y += dy * Math.abs(dy) * velocity;
@@ -750,8 +803,8 @@ myApp.Controls = function(graph) {
                 newScale = t.s * ds;
 
             if (Math.round(t.s * 2) / 2 === 1) {
-                if (!this.stick) this.stick = 5;
-                if (this.stick++ < 5) newScale = 1;
+                if (!this.stick) this.stick = myApp.constants.wheelStick;
+                if (this.stick++ < myApp.constants.wheelStick) newScale = 1;
                 else this.stick = 1;
             }
 
@@ -765,6 +818,8 @@ myApp.Controls = function(graph) {
     });
 
     calcBounds();
+    graph.onresize(setMinScale);
+    setMinScale();
 
     return {
         centerOnOp: function() {
@@ -776,7 +831,7 @@ myApp.Controls = function(graph) {
             applyTransformation(true);
 
             centerOn(x, y);
-            applyTransformation(true, 2000);
+            applyTransformation(false, 2000);
 
             setTimeout(function() {
                 scaleAroundPoint(1, 0, 0);
@@ -796,13 +851,15 @@ function nodeInteraction(graph) {
         if (nodeID !== latestHoveredNode) {
             var node = graph.nodes[nodeID];
             node.expand(0.9 * Math.min(graph.width, graph.height));
-            graph.putNodeOnTop(node);
+            node.container.style['z-index'] = 1;
             latestHoveredNode = nodeID;
         }
     }
 
     function nodeLeave() {
-        graph.nodes[this.dataset.id].reduce();
+        var node = graph.nodes[this.dataset.id];
+        node.reduce();
+        node.container.style['z-index'] = 0;
         latestHoveredNode = null;
     }
 

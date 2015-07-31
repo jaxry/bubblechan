@@ -39,6 +39,8 @@ function makeThreadObject(jsonThread, board) {
             post.height = jp.h;
         }
 
+        post.children = [];
+
         postTable[post.no] = i;
 
         var parents = [],
@@ -48,21 +50,28 @@ function makeThreadObject(jsonThread, board) {
         }
         if (parents.length > 0) {
             post.type = 'reply';
-            post.parents = parents;
         }
         else if (i !== 0) {
-            post.parents = [lastUnrepliedPost];
+            parents = [lastUnrepliedPost];
             post.type = 'standalone';
             lastUnrepliedPost = i;
         }
         else {
-            post.parents = [];
-            post.standalone = true;
             post.type = 'op';
             lastUnrepliedPost = i;
         }
+        for (var j = 0; j < parents.length; j++) {
+            thread.posts[parents[j]].children.push(i);
+        }
+
+        post.parents = parents;
 
         thread.posts[i] = post;
+    }
+
+    for (var i = 0; i < thread.posts.length; i++) {
+        var post = thread.posts[i];
+        post.centrality = post.children.length || 0 + 1 - (post.type !== 'reply' ? 1 : 0);
     }
 
     return thread;
@@ -70,9 +79,9 @@ function makeThreadObject(jsonThread, board) {
 
 function runForceDirect(posts, callback) {
     function parseForceDirectOutput(stdout) {
-        var nodePoints = stdout.split(';');
-        for (var i = 0; i < nodePoints.length - 1; i++) {
-            var p = nodePoints[i].split(',');
+        var nodeCoords = stdout.split(';');
+        for (var i = 0; i < nodeCoords.length - 1; i++) {
+            var p = nodeCoords[i].split(',');
             posts[i].pos = [parseFloat(p[0]), parseFloat(p[1])];
         }
         callback(posts);
@@ -84,8 +93,8 @@ function runForceDirect(posts, callback) {
     for (var i = 0; i < posts.length; i++) {
         var post = posts[i];
         
-        for (var j = 0; j < post.parents.length; j++) {
-            edgeString += post.parents[j] + '-' + i + ';';
+        for (var j = 0; j < post.children.length; j++) {
+            edgeString += i + '-' + post.children[j]  + ';';
             edgeCount++;
         }
     }

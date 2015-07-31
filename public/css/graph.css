@@ -44,6 +44,7 @@ html, body {
     color: #fff;
     background-color: #111;
     border-radius: 50%;
+    border-style: solid;
     overflow: hidden;
     transition: border-radius 0.1s;
 }
@@ -65,15 +66,15 @@ html, body {
 }
 
 .node-standalone {
-    border: 3px solid #e94;
+    border-color: #e94;
 }
 
 .node-reply {
-    border: 3px solid #34a;
+    border-color: #34a;
 }
 
 .node-op {
-    border: 25px solid #fff;
+    border-color: #fff;
 }
 
 .node-highlight {

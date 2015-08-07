@@ -1,11 +1,11 @@
 'use strict';
 
 var express = require('express');
-var threadRouter = require('./routes/thread');
+var mainRouter = require('./routes/main');
 var app = express();
 
 app.use(express.static('public'));
 
-app.use('/', threadRouter);
+app.use('/', mainRouter);
 
 app.listen(3000);

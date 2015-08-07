@@ -54,7 +54,6 @@ html, body {
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center;
-    background-origin: border-box;
     text-shadow:
         0px 0px 4px #000,  
         0px 0px 4px #000,
@@ -109,9 +108,10 @@ html, body {
 }
 
 .node-message {
-    line-height: 125%;
-    font-family: Times, "Times New Roman", Georgia, serif;
-    font-size: 1.05em;
+    /*line-height: 125%;*/
+    /*font-family: Times, "Times New Roman", Georgia, serif;*/
+    /*font-size: 1.05em;*/
+    font-family: arial,helvetica,sans-serif;
 }
 
 .node .node-message {

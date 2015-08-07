@@ -53,7 +53,7 @@ struct args process_args(int argc, char *argv[])
 {
     struct args args;
     int c;
-    while ( (c = getopt (argc, argv, "n:e:")) != -1 )
+    while ( (c = getopt(argc, argv, "n:e:")) != -1 )
     {
         switch (c)
         {

@@ -1,7 +1,7 @@
 'use strict';
 
 var childProcess = require('child_process');
-var http = require('http');
+var util = require('./util');
 
 var reQuotes = /href="#p(\d+)/g;
 
@@ -71,7 +71,7 @@ function makeThreadObject(jsonThread, board) {
 
     for (var i = 0; i < thread.posts.length; i++) {
         var post = thread.posts[i];
-        post.centrality = post.children.length || 0 + 1 - (post.type !== 'reply' ? 1 : 0);
+        post.centrality = Math.max(1, 1 + post.children.length - (post.type !== 'reply' ? 1 : 0));
     }
 
     return thread;
@@ -106,26 +106,18 @@ function runForceDirect(posts, callback) {
     });
 }
 
-function get4ChanJSON(board, threadnum, callback) {
-    http.get('http://a.4cdn.org/' + board + '/thread/' + threadnum + '.json', function(res) {
-        var data = '';
-        res.setEncoding('utf8');
-        res.on('data', function(chunk) {
-            data += chunk;
-        });
-        res.on('end', function(){
-            callback(data ? JSON.parse(data) : null);
-        });
-    });
-
-    // var jsonThread = ;
-    // callback(jsonThread);
-}
-
 function processThread(res, board, threadnum) {
     var time = Date.now();
 
     var thread;
+
+    function get4chanThread() {
+        var url = 'http://a.4cdn.org/' + board + '/thread/' + threadnum + '.json';
+        util.getJSON(url, handleJson);
+
+        // var jsonThread = ;
+        // handleJson(jsonThread);
+    }
 
     function handleJson(jsonThread) {
         if (jsonThread) {
@@ -139,11 +131,10 @@ function processThread(res, board, threadnum) {
 
     function serveHTML() {
         console.log(thread.title + ' - ' + (Date.now() - time) + ' ms');
-        res.render('index.jade', {thread: thread});
+        res.render('thread.jade', {thread: thread});
     }
 
-    get4ChanJSON(board, threadnum, handleJson);
+    get4chanThread();
 }
 
-
-exports.processThread = processThread;
+module.exports = processThread;

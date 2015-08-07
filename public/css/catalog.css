@@ -1,0 +1,32 @@
+#board-title {
+    text-align: center;
+}
+
+.catalog-threads {
+    text-align: center;
+}
+
+.catalog-thread {
+    width: 270px;
+    max-height: 410px;
+    margin: 2px 1px;
+    vertical-align: top;
+    text-align: center;
+    display: inline-block;
+    word-wrap: break-word;
+    overflow: hidden;
+}
+
+.catalog-thread .quote {
+    color: #789922;
+}
+
+.catalog-thread s {
+    background-color: #000;
+    color: #000;
+    text-decoration: none;
+}
+
+.catalog-thread s:hover {
+    color: #fff;
+}

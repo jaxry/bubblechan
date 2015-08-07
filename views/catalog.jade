@@ -1,0 +1,25 @@
+- var boardTitle = '/' + boardName + '/ - ' + boards[boardName];
+
+mixin thread_preview(thread)
+    div.catalog-thread
+        a.catalog-thumb(href='thread/' + thread.no)
+            img(src='http://i.4cdn.org/' + boardName + '/' + thread.tim + 's.jpg')
+        div.catalog-stats R: <strong>#{thread.replies}</strong> / I: <strong>#{thread.images}</strong>
+        if thread.sub
+            div.catalog-subject=thread.sub
+        div.catalog-comment!=thread.com
+
+
+doctype html
+html
+  head
+    title=boardTitle
+    link(rel='stylesheet', href='/css/catalog.css')
+
+  body
+    h1#board-title=boardTitle
+    div.catalog-threads 
+        each page in catalog
+            each thread in page.threads
+                +thread_preview(thread)
+

@@ -1,6 +1,7 @@
-'use strict';
-
 var myApp = myApp || {};
+(function() {
+
+'use strict';
 
 myApp.constants = {
     op: '#fff',
@@ -8,7 +9,7 @@ myApp.constants = {
     reply: '#34a',
     highlight: '#ffa',
 
-    graphScale: 140,
+    graphScale: 135,
     maxNodeSize: 240,
     imageNodeSize: 200,
     minNodeSize: 90,
@@ -22,7 +23,6 @@ myApp.constants = {
     centralityBaseScale: 1.5,
     centralityScaleLimit: 2,
 
-
     nodeExpandDuration: 200,
 
     wheelStick: 5,
@@ -33,7 +33,7 @@ myApp.constants.time = Date.now();
 myApp.constants.maxNodeScale = myApp.constants.graphScale;
 myApp.constants.arrowWidth = document.getElementById('Arrow').getAttribute('markerWidth');
 myApp.constants.baseWidth = document.getElementById('Circle-reply').getAttribute('markerWidth') / 2.5 - 0.1;
-myApp.constants.edgeSVGPadding = myApp.constants.edgeScaleLimit * myApp.constants.edgeWidth;
+myApp.constants.edgeSVGPadding = 2 * myApp.constants.edgeScaleLimit * myApp.constants.edgeWidth;
 
 myApp.onWindowResize = function(callback) {
 
@@ -394,8 +394,7 @@ myApp.Graph = function() {
         graphDiv = container.appendChild(myApp.createElem('div', {id: 'graph'})),
         edgeDiv = myApp.createElem('div', {class: 'graph-group'}),
         nodeDiv = myApp.createElem('div', {class: 'graph-group'}),
-        containerWidth, containerHeight,
-        maxCentrality = 0;
+        containerWidth, containerHeight;
 
     var nodes = [],
         edges = [],
@@ -410,7 +409,6 @@ myApp.Graph = function() {
         
         nodes.push(node);
         if (node.img && !node.img.isWebm) nodesWithImages.push(node);
-        if (node.centrality > maxCentrality) maxCentrality = node.centrality;
         
         nodeDiv.appendChild(node.container);
 
@@ -500,6 +498,7 @@ myApp.Graph = function() {
 
             graphDiv.appendChild(edgeDiv);
             graphDiv.appendChild(nodeDiv);
+            graphDiv.style.opacity = 1;
         },
         nodes: nodes,
         container: container,
@@ -830,17 +829,16 @@ myApp.Controls = function(graph) {
             }, 800);
         }
     };
-
 };
 
-function nodeInteraction(graph) {
+myApp.nodeInteraction = function(graph) {
     var latestHoveredNode;
 
     function nodeHover() {
         var nodeID = this.dataset.id;
         if (nodeID !== latestHoveredNode) {
             var node = graph.nodes[nodeID];
-            node.expand(0.9 * Math.min(graph.width, graph.height));
+            node.expand(0.95 * Math.min(graph.width, graph.height));
             node.container.style['z-index'] = 1;
             latestHoveredNode = nodeID;
         }
@@ -886,26 +884,6 @@ function nodeInteraction(graph) {
     }
 
     processNodes(graph.nodes);
-}
+};
 
-function pageLoad(controls) {
-    if (document.hasFocus()) {
-        controls.centerOnOp();
-    }
-    else window.addEventListener('focus', function f() {
-        controls.centerOnOp();
-        window.removeEventListener('focus', f);
-    });
-}
-
-(function() {
-    // var time = Date.now();
-
-    var graph = myApp.Graph();
-    graph.addPosts(myApp.thread.posts);
-
-    var controls = myApp.Controls(graph);
-    nodeInteraction(graph);
-
-    pageLoad(controls);
 }());

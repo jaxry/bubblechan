@@ -19,7 +19,7 @@ function makeThreadObject(jsonThread, board) {
         postTable = {},
         lastUnrepliedPost;
 
-    thread.title = op.sub || op.semantic_url.split('-').join(' ');
+    thread.title = '/' + board + '/ - ' + (op.sub || util.htmlToPlainText(op.com).substring(0, 50));
     thread.replyCount = op.replies;
     thread.posts = new Array(jsonPosts.length);
 
@@ -106,7 +106,11 @@ function runForceDirect(posts, callback) {
     });
 }
 
-function processThread(res, board, threadnum) {
+function getHTML(res, board, threadnum) {
+    res.render('thread.jade');
+}
+
+function getJSON(res, board, threadnum) {
     var time = Date.now();
 
     var thread;
@@ -122,19 +126,20 @@ function processThread(res, board, threadnum) {
     function handleJson(jsonThread) {
         if (jsonThread) {
             thread = makeThreadObject(jsonThread, board);
-            setImmediate(runForceDirect, thread.posts, serveHTML);
+            setImmediate(runForceDirect, thread.posts, serveJSON);
         }
         else {
             res.status(404).send('Cannot find thread');
         }
     }
 
-    function serveHTML() {
+    function serveJSON() {
         console.log(thread.title + ' - ' + (Date.now() - time) + ' ms');
-        res.render('thread.jade', {thread: thread});
+        res.json(thread);
     }
 
     get4chanThread();
 }
 
-module.exports = processThread;
+exports.getHTML = getHTML;
+exports.getJSON = getJSON;

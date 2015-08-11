@@ -9,12 +9,18 @@
 .catalog-thread {
     width: 270px;
     max-height: 410px;
-    margin: 2px 1px;
+    margin: 3px 1px;
     vertical-align: top;
     text-align: center;
     display: inline-block;
     word-wrap: break-word;
     overflow: hidden;
+    font-family: arial,helvetica,sans-serif;
+    font-size: 0.95em;
+}
+
+.catalog-subject {
+    font-weight: bold;
 }
 
 .catalog-thread .quote {

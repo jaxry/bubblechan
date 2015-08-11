@@ -1,14 +1,14 @@
 doctype html
 html
   head
-    title (#{thread.replyCount}) #{thread.title}
+    title Loading...
     meta(name='viewport', content='user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height')
     link(rel='stylesheet', href='/css/graph.css')
-    script.
-      var myApp = {}; myApp.thread = !{JSON.stringify(thread)};
 
   body
     div#graph-container
+      h1#loading-prompt
+
 
   svg#svg-defs(width='0', height='0')
     defs
@@ -25,6 +25,5 @@ html
 
       //- these markers are hard-coded. It may be a good idea to generate them dynamically instead.
 
-
-
   script(src='/js/graph.js')
+  script(src='/js/graph_ajax.js')

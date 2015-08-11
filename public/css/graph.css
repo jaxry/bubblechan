@@ -5,6 +5,15 @@
 
 html, body {
     height: 100%;
+    font-family: arial,helvetica,sans-serif;
+}
+
+#loading-prompt {
+    color: #fff;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
 
 #svg-defs {
@@ -21,6 +30,8 @@ html, body {
 
 #graph {
     position: absolute;
+    opacity: 0;
+    transition: opacity 2s;
 }
 
 .graph-group {
@@ -107,13 +118,6 @@ html, body {
     max-width: 100%;
 }
 
-.node-message {
-    /*line-height: 125%;*/
-    /*font-family: Times, "Times New Roman", Georgia, serif;*/
-    /*font-size: 1.05em;*/
-    font-family: arial,helvetica,sans-serif;
-}
-
 .node .node-message {
     text-align: center;
 }
@@ -143,7 +147,6 @@ html, body {
 
 .node-detail {
     text-align: center;
-    font-family: arial,helvetica,sans-serif;
     font-size: 0.88em;
     color: #fff;
 }

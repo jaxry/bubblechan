@@ -31,6 +31,7 @@ function makeThreadObject(jsonThread, board) {
         
         post.id = i;
         post.postUrl = 'http://boards.4chan.org/' + board + '/thread/' + op.no +  '#p' + jp.no;
+        if (post.com) post.com = util.linkifyUrls(post.com);
 
         if (jp.filename) {
             post.img = 'http://i.4cdn.org/'+ board + '/'+ jp.tim + jp.ext;

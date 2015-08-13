@@ -10,7 +10,7 @@ myApp.constants = {
     highlight: '#ffa',
 
     graphScale: 135,
-    maxNodeSize: 240,
+    maxNodeSize: 245,
     imageNodeSize: 200,
     minNodeSize: 90,
 
@@ -48,7 +48,7 @@ myApp.onWindowResize = function(callback) {
 
 myApp.setAttributes = function(elem, attrs) {
     for (var a in attrs) {
-        elem.setAttribute(a, String(attrs[a]));
+        elem.setAttribute(a, attrs[a] !== null ? String(attrs[a]) : '');
     }
 };
 
@@ -166,9 +166,11 @@ myApp.Node.prototype = {
         var expandTo = this.img ? myApp.clamp(this.img.max, this.size.full, maxRadius) : this.size.full;
         myApp.animate(this.size.current, expandTo, myApp.constants.nodeExpandDuration, this.setRadius, null, this);
        
-       this.container.classList.add('expanded');
+        this.container.classList.add('expanded');
 
-        if (this.img && this.img.usingThumb) this.setThumbnail(false, true);
+        if (this.webm) this.startWebm();
+        else if (this.img && this.img.usingThumb) this.setThumbnail(false, true);
+
 
         this.size.isExpanded = true;
     },
@@ -176,7 +178,8 @@ myApp.Node.prototype = {
         myApp.animate(this.size.current, this.size.reduced, myApp.constants.nodeExpandDuration, this.setRadius, null, this);
         this.container.classList.remove('expanded');
         
-        if (this.img && this.img.usingThumb) this.setThumbnail(true, true);
+        if (this.webm) this.stopWebm();
+        else if (this.img && this.img.usingThumb) this.setThumbnail(true, true);
         
         this.size.isExpanded = false;
     },
@@ -204,6 +207,16 @@ myApp.Node.prototype = {
     showContent: function() {
         this.container.classList.remove('hide-content');
     },
+    startWebm: function() {
+        this.webm.style.display = '';
+        this.container.style['background-image'] = ''
+        this.webm.play();
+    },
+    stopWebm: function() {
+        this.webm.pause();
+        this.webm.style.display = 'none';
+        this.setThumbnail(this.img.usingThumb, true);
+    },
     _createNodeDiv: function(post) {
         this.container = myApp.createElem('div', {class: 'node', 'data-id': this.id});
         
@@ -229,6 +242,7 @@ myApp.Node.prototype = {
             this.content.appendChild(this._createFooter(post));
             this.setThumbnail(this.img.isWebm);
             this.container.classList.add('node-image');
+            if (this.img.isWebm) this._createWebm();
         }
 
         this.container.classList.add('expanded');
@@ -270,6 +284,11 @@ myApp.Node.prototype = {
         il.addEventListener('mouseout', this.showContent.bind(this));
 
         return footer;
+    },
+    _createWebm: function() {
+        this.webm = myApp.createElem('video', {src: this.img.full, loop: null, preload: 'auto'});
+        this.container.appendChild(this.webm);
+        this.stopWebm();
     }
 };
 

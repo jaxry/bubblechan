@@ -249,8 +249,8 @@ myApp.Node.prototype = {
         var expandedWidth = this._calcWidth();
         this.container.classList.remove('expanded');
 
-        this.size.reduced = myApp.clamp(reducedWidth * 1.41, post.img ? myApp.constants.imageNodeSize : myApp.constants.minNodeSize, myApp.constants.maxNodeSize);
-        this.size.full = expandedWidth * 1.48;
+        this.size.reduced = myApp.clamp(reducedWidth * 1.43, post.img ? myApp.constants.imageNodeSize : myApp.constants.minNodeSize, myApp.constants.maxNodeSize);
+        this.size.full = expandedWidth * 1.5;
         this.size.current = this.size.reduced;
 
         this.container.style['border-width'] = 3 * Math.pow(this.centrality, 0.75) + 'px';

@@ -80,6 +80,7 @@ function makeThreadObject(jsonThread, board) {
 
 function runForceDirect(posts, callback) {
     function parseForceDirectOutput(stdout) {
+
         var nodeCoords = stdout.split(';');
         for (var i = 0; i < nodeCoords.length - 1; i++) {
             var p = nodeCoords[i].split(',');
@@ -135,7 +136,7 @@ function getJSON(res, board, threadnum) {
     }
 
     function serveJSON() {
-        console.log(thread.title + ' - ' + (Date.now() - time) + ' ms');
+        console.log(thread.title + ' (' + thread.replyCount + ' replies) - ' + (Date.now() - time) + ' ms');
         res.json(thread);
     }
 

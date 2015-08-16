@@ -4,49 +4,58 @@
 #include <stdlib.h>
 #include <time.h>
 #include <math.h>
+#include "common.h"
+#include "barneshut.h"
 
-#define ITERATIONS 5000
+#define ITERATIONS 2500
 #define START_TEMP 1
-#define STOP_TEMP 0.1
+#define STOP_TEMP 0.2
 
-struct args {
+struct args 
+{
     char *nodes, *edges;
 };
 
 typedef struct 
 {
-    float x, y, dx, dy;
+    point p;
+    point d;
 } node;
 
 typedef struct 
 {
     node *pnt;
     size_t size;
+    point min_bound;
+    point max_bound;
 } nodes;
 
-typedef struct {
+typedef struct 
+{
     node *parent, *child;
 } edge;
 
-typedef struct {
+typedef struct 
+{
     edge *pnt;
     size_t size;
 } edges;
 
-typedef struct {
-    float x, y, dist;
-} distance;
-
-distance direction(node *node1, node *node2)
+void clearBounds(nodes *nodes) 
 {
-    distance d;
-    d.x = node2->x - node1->x;
-    d.y = node2->y - node1->y;
-    d.dist = sqrtf(d.x * d.x + d.y * d.y);
-    d.x /= d.dist;
-    d.y /= d.dist;
+    nodes->min_bound.x = 0;
+    nodes->min_bound.y = 0;
+    nodes->max_bound.x = 0;
+    nodes->max_bound.y = 0;
+}
 
-    return d;
+void updateBounds(nodes *nodes, point p) 
+{
+    if (p.x < nodes->min_bound.x) nodes->min_bound.x = p.x;
+    else if (p.x > nodes->max_bound.x) nodes->max_bound.x = p.x;
+
+    if (p.y < nodes->min_bound.y) nodes->min_bound.y = p.y;
+    else if (p.y > nodes->max_bound.y) nodes->max_bound.y = p.y;
 }
 
 struct args process_args(int argc, char *argv[])
@@ -80,8 +89,9 @@ nodes create_nodes(char *node_arg)
     float canvas_range = 2;
     for (int i = 0; i < nodes_length; i++) 
     {
-        nodes.pnt[i].x = (float) rand() / (float) RAND_MAX * canvas_range - canvas_range / 2;
-        nodes.pnt[i].y = (float) rand() / (float) RAND_MAX * canvas_range - canvas_range / 2;
+        nodes.pnt[i].p.x = (float) rand() / (float) RAND_MAX * canvas_range - canvas_range / 2;
+        nodes.pnt[i].p.y = (float) rand() / (float) RAND_MAX * canvas_range - canvas_range / 2;
+        updateBounds(&nodes, nodes.pnt[i].p);
     }
     return nodes;
 }
@@ -114,57 +124,67 @@ void output_graph(nodes nodes)
 {
     for (int i = 0; i < nodes.size; i++) 
     {
-        printf("%f,%f;", nodes.pnt[i].x, nodes.pnt[i].y);
+        printf("%.9g,%.9g;", nodes.pnt[i].p.x, nodes.pnt[i].p.y);
     }
 }
 
-
 // a simplified simulation based on Fruchterman and Reingold's "Graph Drawing by Force-directed Placement"
-void force_direct(nodes nodes, edges edges) 
+// tree optimization based on Quigley and Eades' "FADE: Graph drawing, clustering and visual abstraction"
+void force_direct(nodes nodes, edges edges, int use_tree) 
 {
     float temperature = START_TEMP;
     float decay = (temperature - STOP_TEMP) / ITERATIONS;
-    // float gravity = 1 / (sqrtf(nodes.size) * 500);
+
+    bh_tree *t;
 
     for (int i = 0; i < ITERATIONS; i++)
     {
+        if (use_tree) t = new_tree(nodes.min_bound, nodes.max_bound);
+
         for (int n = 0; n < nodes.size; n++) 
         {
-            nodes.pnt[n].dx = 0; nodes.pnt[n].dy = 0;
+            nodes.pnt[n].d.x = 0; nodes.pnt[n].d.y = 0;
+        
+            if (use_tree) insert(t, nodes.pnt[n].p);
         }
 
         for (int n = 0; n < nodes.size; n++)
         {
-            for (int p = n + 1; p < nodes.size; p++)
+            if (use_tree) compute_force(t, nodes.pnt[n].p, &nodes.pnt[n].d);
+            else 
             {
-                distance dir = direction(&nodes.pnt[n], &nodes.pnt[p]);
-                float r = 1 / dir.dist; // repulsive force
-                nodes.pnt[n].dx -= dir.x * r; nodes.pnt[n].dy -= dir.y * r;
-                nodes.pnt[p].dx += dir.x * r; nodes.pnt[p].dy += dir.y * r;
+                for (int p = n + 1; p < nodes.size; p++)
+                {
+                    distance dir = direction(nodes.pnt[n].p, nodes.pnt[p].p);
+                    float r = 1 / dir.dist; // repulsive force
+                    nodes.pnt[n].d.x -= dir.x * r; nodes.pnt[n].d.y -= dir.y * r;
+                    nodes.pnt[p].d.x += dir.x * r; nodes.pnt[p].d.y += dir.y * r;
+                }
             }
         }
 
         for (int e = 0; e < edges.size; e++) 
         {
-            distance dir = direction(edges.pnt[e].parent, edges.pnt[e].child);
+            distance dir = direction(edges.pnt[e].parent->p, edges.pnt[e].child->p);
             float a = dir.dist * dir.dist; // attractive force
-            edges.pnt[e].parent->dx += dir.x * a; edges.pnt[e].parent->dy += dir.y * a;
-            edges.pnt[e].child->dx -= dir.x * a; edges.pnt[e].child->dy -= dir.y * a;
+
+            edges.pnt[e].parent->d.x += dir.x * a; edges.pnt[e].parent->d.y += dir.y * a;
+            edges.pnt[e].child->d.x -= dir.x * a; edges.pnt[e].child->d.y -= dir.y * a;
         }
         
+        if (use_tree) clearBounds(&nodes);
+
         for (int n = 0; n < nodes.size; n++)
         {
-
-            // float center = sqrtf(nodes.pnt[n].x * nodes.pnt[n].x + nodes.pnt[n].y * nodes.pnt[n].y) * gravity;
-            // nodes.pnt[n].dx -= nodes.pnt[n].x * center; 
-            // nodes.pnt[n].dy -= nodes.pnt[n].y * center;
-
-            float disp = sqrtf(nodes.pnt[n].dx * nodes.pnt[n].dx + nodes.pnt[n].dy * nodes.pnt[n].dy);
-            nodes.pnt[n].x += nodes.pnt[n].dx * fminf(temperature, disp) / disp;
-            nodes.pnt[n].y += nodes.pnt[n].dy * fminf(temperature, disp) / disp;
+            float disp = sqrtf(nodes.pnt[n].d.x * nodes.pnt[n].d.x + nodes.pnt[n].d.y * nodes.pnt[n].d.y);
+            nodes.pnt[n].p.x += nodes.pnt[n].d.x * fminf(temperature, disp) / disp;
+            nodes.pnt[n].p.y += nodes.pnt[n].d.y * fminf(temperature, disp) / disp;
+            if (use_tree) updateBounds(&nodes, nodes.pnt[n].p);
         }
 
         temperature = fmaxf(temperature -= decay, STOP_TEMP);
+
+        if (use_tree) delete_tree(t);
     }
 }
 
@@ -175,7 +195,8 @@ int main(int argc, char *argv[])
     struct args args = process_args(argc, argv);
     nodes nodes = create_nodes(args.nodes);
     edges edges = create_edges(args.edges, nodes);
-    force_direct(nodes, edges);
+    force_direct(nodes, edges, nodes.size > 150);
     output_graph(nodes);
+
     return 0;
 }

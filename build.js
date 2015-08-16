@@ -9,7 +9,9 @@ try {
     if ( e.code !== 'EEXIST' ) throw e;
 }
 
-childProcess.exec('gcc app/force_direct.c -o ./bin/force_direct -lm -O3 -std=gnu99', 
+var dir = 'app/force_direct/';
+
+childProcess.exec('gcc ' + dir + 'main.c ' + dir + 'barneshut.c ' + '-o ./bin/force_direct -lm -O3 -std=gnu99', 
     function(error, stdout, stderr) {
         if (error) console.log(error.stack);
     }

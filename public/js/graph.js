@@ -5,9 +5,9 @@ var myApp = myApp || {};
 
 myApp.constants = {
     op: '#fff',
-    standalone: '#e94',
-    reply: '#34a',
-    highlight: '#ffa',
+    standalone: '#7c2d2d',
+    reply: '#6e6e95',
+    highlight: '#ffb',
 
     graphScale: 135,
     maxNodeSize: 245,
@@ -18,7 +18,7 @@ myApp.constants = {
     arrowMargin: 15,
     baseMargin: 0,
 
-    edgeScaleLimit: 9,
+    edgeScaleLimit: 12,
     fullCentralityScalePoint: 15,
     centralityBaseScale: 1.5,
     centralityScaleLimit: 2,

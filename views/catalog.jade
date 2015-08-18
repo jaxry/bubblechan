@@ -1,5 +1,13 @@
 - var boardTitle = '/' + boardName + '/ - ' + boards[boardName];
 
+mixin boardList
+    div#board-list
+        - for (var i = 0; i < boardsOrdered.length; i++)
+            - board = boardsOrdered[i]
+            if (i != 0)
+                |  / 
+            a(href='/board/' + board, title=boards[board]) #{board}
+
 mixin thread_preview(thread)
     div.catalog-thread
         a.catalog-thumb(href='thread/' + thread.no)
@@ -17,7 +25,9 @@ html
     link(rel='stylesheet', href='/css/catalog.css')
 
   body
+    +boardList
     h1#board-title=boardTitle
+    hr
     div.catalog-threads 
         each page in catalog
             each thread in page.threads

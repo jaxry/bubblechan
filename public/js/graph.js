@@ -583,27 +583,27 @@ myApp.InputWrapper = function(elem) {
 
             elem.addEventListener('mousedown', mousedown);
             elem.addEventListener('mouseup', mouseup);
-            elem.addEventListener('touchstart', mousedown);
-            elem.addEventListener('touchend', mouseup);
+            // elem.addEventListener('touchstart', mousedown);
+            // elem.addEventListener('touchend', mouseup);
         },
         drag: function(init, dragHandler) {
             var scope = {};
             init = init.bind(scope);
             dragHandler = dragHandler.bind(scope);
 
-            var mousemoveHandler = function(e) {
-                e.preventDefault();
-                dragHandler(m.x, m.y, e);
-            };
+            // var mousemoveHandler = function(e) {
+            //     e.preventDefault();
+            //     dragHandler(m.x, m.y, e);
+            // };
 
-            elem.addEventListener('mousedown', function(e) {
-                init(m.x, m.y, e);
-                elem.addEventListener('mousemove', mousemoveHandler);
-            });
+            // elem.addEventListener('mousedown', function(e) {
+            //     init(m.x, m.y, e);
+            //     elem.addEventListener('mousemove', mousemoveHandler);
+            // });
 
-            elem.addEventListener('mouseup', function() {
-                elem.removeEventListener('mousemove', mousemoveHandler);
-            });
+            // elem.addEventListener('mouseup', function() {
+            //     elem.removeEventListener('mousemove', mousemoveHandler);
+            // });
 
             touchDragInit = function(e) {
                 if (e.touches.length === 1) init(m.x, m.y, e);
@@ -771,6 +771,20 @@ myApp.Controls = function(graph) {
         }
         applyTransformation(true, 300);
     }
+
+    graphEvents.drag(
+        function(x, y) {
+            this.lastX = x;
+            this.lastY = y;
+        }, 
+        function(x, y) {
+            t.x += x - this.lastX;
+            t.y += y - this.lastY;
+            applyTransformation();
+            this.lastX = x;
+            this.lastY = y;
+        }
+    );
 
     graphEvents.hold(function(totalTime, elapsed, x, y) {
         var dx = 1 - 2 * x / graph.width,

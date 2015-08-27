@@ -1,6 +1,8 @@
 # Bubblechan 
 A highly experimental, two dimensional 4chan reader.
 
+Visit the app at [http://bubblechan.squiggle.io](http://bubblechan.squiggle.io)
+
 ---
 
 ## What is it?
@@ -22,8 +24,7 @@ Bubblechan is a web app. The force-directed graph is computed on a server before
 4. Run `npm start`. The server is up and you can now connect to it on port 3000.
 
 ## How To Use
-Visit http://localhost:3000/board/`board_letter` to load a catalog for the specified 4chan board.
-(For instance, http://localhost:3000/board/g/ loads the Technology board.)
+Visit [http://localhost:3000/](http://localhost:3000/) to connect to the web server.
 
 ### What Am I Seeing?
 #### Legend

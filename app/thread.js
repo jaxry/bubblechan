@@ -112,7 +112,7 @@ function getHTML(res, board, threadnum) {
     res.render('thread.jade');
 }
 
-function getJSON(res, board, threadnum) {
+function getJSON(req, res, board, threadnum) {
     var time = Date.now();
 
     var thread;
@@ -136,7 +136,7 @@ function getJSON(res, board, threadnum) {
     }
 
     function serveJSON() {
-        console.log(thread.title + ' (' + thread.replyCount + ' replies) - ' + (Date.now() - time) + ' ms');
+        console.log(req.ip + ' - ' + thread.title + ' (' + thread.replyCount + ' replies) - ' + (Date.now() - time) + ' ms');
         res.json(thread);
     }
 

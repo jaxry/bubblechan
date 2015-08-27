@@ -14,7 +14,7 @@ function addTrailingSlash(req, res, next) {
 }
 
 router.get('/board/:board/thread/:threadnum(\\d+)/json', function(req, res) {
-    thread.getJSON(res, req.params.board, req.params.threadnum);
+    thread.getJSON(req, res, req.params.board, req.params.threadnum);
 });
 
 router.get('/board/:board/thread/:threadnum(\\d+)', function(req, res) {

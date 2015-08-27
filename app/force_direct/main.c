@@ -10,6 +10,7 @@
 #define ITERATIONS 2500
 #define START_TEMP 1
 #define STOP_TEMP 0.2
+#define USE_TREE_AT_NODE_COUNT 175
 
 struct args 
 {
@@ -195,7 +196,7 @@ int main(int argc, char *argv[])
     struct args args = process_args(argc, argv);
     nodes nodes = create_nodes(args.nodes);
     edges edges = create_edges(args.edges, nodes);
-    force_direct(nodes, edges, nodes.size > 150);
+    force_direct(nodes, edges, nodes.size > USE_TREE_AT_NODE_COUNT);
     output_graph(nodes);
 
     return 0;

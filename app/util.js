@@ -33,11 +33,11 @@ exports.htmlToPlainText = (function() {
 })();
 
 exports.linkifyUrls = (function() {
-    var wbr = /<wbr>/g
-    var url = /((([A-Za-z]{3,9}:(?:\/\/)?)(?:[\-;:&=\+\$,\w]+@)?[A-Za-z0-9\.\-]+|(?:www\.|[\-;:&=\+\$,\w]+@)[A-Za-z0-9\.\-]+)((?:\/[\+~%\/\.\w\-_]*)?\??(?:[\-\+=&;%@\.\w_]*)#?(?:[\.\!\/\\\w]*))?)/ig
+    var wbr = /<wbr>/g;
+    var url = /((([A-Za-z]{3,9}:(?:\/\/)?)(?:[\-;:&=\+\$,\w]+@)?[A-Za-z0-9\.\-]+|(?:www\.|[\-;:&=\+\$,\w]+@)[A-Za-z0-9\.\-]+)((?:\/[\+~%\/\.\w\-_]*)?\??(?:[\-\+=&;%@\.\w_]*)#?(?:[\.\!\/\\\w]*))?)/ig;
 
     return function(str) {
         return str.replace(wbr, '')
                   .replace(url, '<a target="_blank" href="$&">$&</a>');
-    }
+    };
 })();

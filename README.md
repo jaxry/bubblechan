@@ -29,7 +29,7 @@ Visit http://localhost:3000/board/`board_letter` to load a catalog for the speci
 #### Legend
 + **White Node**: the OP post
 + **Blue Nodes**: posts which are replies to other posts
-+ **Orange Nodes**: standalone posts which are _not_ replies.
++ **Red Nodes**: standalone posts which are _not_ replies.
 
 #### Controls
 Navigate the graph with the mouse.

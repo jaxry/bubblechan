@@ -3,6 +3,7 @@ html
   head
     title Loading...
     meta(name='viewport', content='user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height')
+    link(rel='stylesheet', href='/css/common.css')
     link(rel='stylesheet', href='/css/graph.css')
 
   body
@@ -14,13 +15,13 @@ html
     defs
       marker#Arrow(viewBox='0 0 10 10', orient='auto', refX='1', refY='5', markerWidth='2', markerHeight='2')
         path(d='M 0 0 L 10 5 L 0 10 z', fill='#ddd')
-      marker#Circle-op(viewBox='0 0 10 10', orient='auto', refX='4', refY='5', markerWidth='1.75', markerHeight='1.75')
+      marker#Circle-op(viewBox='0 0 10 10', orient='auto', refX='4', refY='5', markerWidth='1.8', markerHeight='1.8')
         circle(cx='0', cy='5', r='5', fill='#fff')
-      marker#Circle-standalone(viewBox='0 0 10 10', orient='auto', refX='4', refY='5', markerWidth='1.75', markerHeight='1.75')
+      marker#Circle-standalone(viewBox='0 0 10 10', orient='auto', refX='4', refY='5', markerWidth='1.8', markerHeight='1.8')
         circle(cx='0', cy='5', r='5', fill='#7c2d2d')
-      marker#Circle-reply(viewBox='0 0 10 10', orient='auto', refX='4', refY='5', markerWidth='1.75', markerHeight='1.75')
+      marker#Circle-reply(viewBox='0 0 10 10', orient='auto', refX='4', refY='5', markerWidth='1.8', markerHeight='1.8')
         circle(cx='0', cy='5', r='5', fill='#6e6e95')
-      marker#Circle-highlight(viewBox='0 0 10 10', orient='auto', refX='4', refY='5', markerWidth='1.75', markerHeight='1.75')
+      marker#Circle-highlight(viewBox='0 0 10 10', orient='auto', refX='4', refY='5', markerWidth='1.8', markerHeight='1.8')
         circle(cx='0', cy='5', r='5', fill='#F9D992')
 
       //- these markers are hard-coded. It may be a good idea to generate them dynamically instead.

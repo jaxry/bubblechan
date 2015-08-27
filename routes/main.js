@@ -1,6 +1,7 @@
 'use strict';
 
 var express = require('express');
+var index = require('../app/index');
 var thread = require('../app/thread');
 var catalog = require('../app/catalog');
 var router = express.Router();
@@ -23,6 +24,10 @@ router.get('/board/:board/thread/:threadnum(\\d+)', function(req, res) {
 router.use('/board', addTrailingSlash);
 router.get('/board/:board/', function(req, res) {
     catalog(res, req.params.board);
+});
+
+router.get('/', function(req, res) {
+    index(res);
 });
 
 router.get('*', function(req, res) {

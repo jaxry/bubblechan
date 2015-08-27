@@ -1,56 +1,17 @@
-* {
-    margin: 0;
-    padding: 0;
-}
-
-body {
-    font-family: arial,helvetica,sans-serif;
-    background: #1c1c1c;
-    color: #cdcdcd;
-    font-size: 10pt;
-}
-
-a {
-    color: #6e6e95;
-}
-
-hr {
-    border: 1px solid #282828;
-}
-
-#board-list {
-    padding: 3px;
-}
-
-#board-list::before {
-    content: "[";
-}
-
-#board-list::after {
-    content: "]";
-}
-
-#board-list > a {
-    text-decoration: none;
-    padding: 1px;
-}
-
 #board-title {
     text-align: center;
-    margin-top: 10px;
-    padding: 6px;
+    margin: 12px 6px 6px;
 }
 
 .catalog-threads {
     text-align: center;
-    padding: 20px 0px;
+    padding: 5px 0px;
 }
 
 .catalog-thread {
     width: 270px;
     max-height: 410px;
-    padding: 5px 1px 3px;
-    margin-top: 5px;
+    margin: 10px 1px 0px;
     vertical-align: top;
     text-align: center;
     display: inline-block;

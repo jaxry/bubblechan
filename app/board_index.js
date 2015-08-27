@@ -5,7 +5,7 @@ var util = require('./util');
 var titles = {},
     ordered = [];
 
-function makeBoardList(jsonBoards) {
+function makeBoardIndex(jsonBoards) {
     jsonBoards = jsonBoards.boards;
 
     for (var i = 0; i < jsonBoards.length; i++) {
@@ -15,7 +15,7 @@ function makeBoardList(jsonBoards) {
     }
 }
 
-util.getJSON('http://a.4cdn.org/boards.json', makeBoardList);
+util.getJSON('http://a.4cdn.org/boards.json', makeBoardIndex);
 
 exports.titles = titles;
 exports.ordered = ordered;

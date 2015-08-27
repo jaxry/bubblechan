@@ -1,0 +1,6 @@
+nav#board-index
+    - for (var i = 0; i < boardsOrdered.length; i++)
+        - board = boardsOrdered[i]
+        if (i != 0)
+            |  / 
+        a(href='/board/' + board, title=boards[board]) #{board}

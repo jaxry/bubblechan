@@ -1,0 +1,32 @@
+.center {
+    position: absolute;
+    width: 100%;
+    top: 50%;
+    transform: translate(0, -75%);
+    text-align: center;
+}
+
+#app-title {
+    margin-bottom: 50px;
+}
+
+#app-title h1 {
+    font-size: 25pt;
+}
+
+#app-title-sub {
+    font-size: 12pt;
+}
+
+#app-title-detail {
+    color: #666;
+}
+
+#board-container {
+    background: #333;
+    padding: 25px 5px;
+}
+
+#board-index {
+    font-size: 10.5pt;
+}

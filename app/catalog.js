@@ -1,7 +1,7 @@
 'use strict';
 
 var util = require('./util');
-var boardList = require('./board_list');
+var boardList = require('./board_index');
 
 
 function load_board(res, boardName) {

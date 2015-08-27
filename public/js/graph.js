@@ -25,7 +25,7 @@ myApp.constants = {
 
     nodeExpandDuration: 200,
 
-    wheelStick: 5,
+    wheelStick: 4,
     panSensitivity: 1.3
 };
 
@@ -209,7 +209,7 @@ myApp.Node.prototype = {
     },
     startWebm: function() {
         this.webm.style.display = '';
-        this.container.style['background-image'] = ''
+        this.container.style['background-image'] = '';
         this.webm.play();
     },
     stopWebm: function() {
@@ -491,6 +491,8 @@ myApp.Graph = function() {
             }
             else {
 
+                // linear interpolation with x = invS, x0 = 1, x1 = fullCentralityScalePoint, y0 = 1, and y1 = node.centrality
+                // first half of the interpolation is computed here. The remaining part is computed in the setScaleWithCentrality function
                 var baseScale = myApp.constants.centralityBaseScale * myApp.constants.maxNodeScale,
                     interpolation = Math.min((invS - 1) / (myApp.constants.fullCentralityScalePoint - 1), 1),
                     maxScale = myApp.constants.centralityScaleLimit * Math.sqrt(invS);

@@ -1,0 +1,36 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: arial,helvetica,sans-serif;
+    background: #1c1c1c;
+    color: #ddd;
+    font-size: 10pt;
+}
+
+a {
+    color: #6e6e95;
+}
+
+hr {
+    border: 1px solid #282828;
+}
+
+#board-index {
+    margin: 3px;
+}
+
+#board-index::before {
+    content: "[";
+}
+
+#board-index::after {
+    content: "]";
+}
+
+#board-index > a {
+    text-decoration: none;
+    margin: 1px;
+}

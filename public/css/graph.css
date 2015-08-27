@@ -1,21 +1,5 @@
-* {
-    margin: 0;
-    padding: 0;
-}
-
 html, body {
     height: 100%;
-}
-
-body {
-    font-family: arial,helvetica,sans-serif;
-    color: #ddd;
-    background-color: #1c1c1c;
-    font-size: 12pt;
-}
-
-a {
-    color: #6e6e95;
 }
 
 #loading-prompt {
@@ -60,6 +44,7 @@ a {
 }
 
 .node {
+    font-size: 12pt;
     background: #141414;
     position: absolute;
     border-radius: 50%;

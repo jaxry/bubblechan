@@ -1,8 +1,6 @@
 # Bubblechan 
 A highly experimental, two dimensional 4chan reader.
 
-Visit the app at [http://bubblechan.squiggle.io](http://bubblechan.squiggle.io)
-
 ---
 
 ## What is it?

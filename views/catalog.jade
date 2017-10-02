@@ -3,7 +3,7 @@
 mixin thread_preview(thread)
     div.catalog-thread
         a.catalog-thumb(href='thread/' + thread.no)
-            img(src='http://i.4cdn.org/' + boardName + '/' + thread.tim + 's.jpg')
+            img(src='http://t.4cdn.org/' + boardName + '/' + thread.tim + 's.jpg')
         div.catalog-stats R: <strong>#{thread.replies}</strong> / I: <strong>#{thread.images}</strong>
         if thread.sub
             div.catalog-subject=thread.sub
@@ -21,7 +21,7 @@ html
     include ./includes/board_index.jade
     h1#board-title=boardTitle
     hr
-    div.catalog-threads 
+    div.catalog-threads
         each page in catalog
             each thread in page.threads
                 +thread_preview(thread)

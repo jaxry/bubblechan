@@ -28,14 +28,14 @@ function makeThreadObject(jsonThread, board) {
             jp = jsonPosts[i];
 
         copyProperties(['no', 'name', 'trip', 'com', 'filename', 'ext', 'time'], jp, post);
-        
+
         post.id = i;
         post.postUrl = 'http://boards.4chan.org/' + board + '/thread/' + op.no +  '#p' + jp.no;
         if (post.com) post.com = util.linkifyUrls(post.com);
 
         if (jp.filename) {
-            post.img = 'http://i.4cdn.org/'+ board + '/'+ jp.tim + jp.ext;
-            post.thumb = 'http://i.4cdn.org/' + board + '/' + jp.tim + 's.jpg';
+            post.img = 'http://t.4cdn.org/'+ board + '/'+ jp.tim + jp.ext;
+            post.thumb = 'http://t.4cdn.org/' + board + '/' + jp.tim + 's.jpg';
             post.width = jp.w;
             post.height = jp.h;
         }
@@ -94,7 +94,7 @@ function runForceDirect(posts, callback) {
 
     for (var i = 0; i < posts.length; i++) {
         var post = posts[i];
-        
+
         for (var j = 0; j < post.children.length; j++) {
             edgeString += i + '-' + post.children[j]  + ';';
             edgeCount++;

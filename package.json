@@ -3,9 +3,9 @@
   "description": "a two-dimensional 4chan reader",
   "version": "0.1.0",
   "license": "AGPL-3.0",
-  "repository" : { 
-    "type" : "git",
-    "url" : "https://github.com/jaxry/bubblechan.git"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jaxry/bubblechan.git"
   },
   "scripts": {
     "build": "node build.js"
